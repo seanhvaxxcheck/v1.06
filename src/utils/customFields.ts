@@ -8,11 +8,6 @@ export const DEFAULT_CONDITIONS = [
 ];
 
 export const DEFAULT_SUBCATEGORIES = [
-];
-
-// Interface for custom field data from the database function
-
-export const DEFAULT_SUBCATEGORIES = [
   'bowls',
   'plates',
   'cups',
