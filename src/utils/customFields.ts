@@ -11,6 +11,15 @@ export const DEFAULT_SUBCATEGORIES = [
 ];
 
 // Interface for custom field data from the database function
+
+export const DEFAULT_SUBCATEGORIES = [
+  'bowls',
+  'plates',
+  'cups',
+  'vases',
+  'figurines',
+  'serving_pieces'
+];
 export interface CustomField {
   id: string;
   field_name: string;
