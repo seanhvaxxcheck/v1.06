@@ -302,6 +302,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
     [customFields]
   );
   
+  const allSubcategories = useMemo(() => 
+    getAllSubcategoriesSync(customFields || []),
+    [customFields]
+  );
+  
   const allConditions = useMemo(() => 
     getAllConditionsSync(customFields || []),
     [customFields]

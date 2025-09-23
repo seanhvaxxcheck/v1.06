@@ -7,11 +7,14 @@ export const DEFAULT_CATEGORIES = [
 export const DEFAULT_CONDITIONS = [
 ];
 
+export const DEFAULT_SUBCATEGORIES = [
+];
+
 // Interface for custom field data from the database function
 export interface CustomField {
   id: string;
   field_name: string;
-  field_type: 'category' | 'condition';
+  field_type: 'category' | 'condition' | 'subcategory';
   is_active: boolean;
   user_id: string;
 }
@@ -47,6 +50,14 @@ export const getCustomConditions = async (userId: string): Promise<string[]> => 
     .map(field => field.field_name);
 };
 
+// Get subcategories using the new function
+export const getCustomSubcategories = async (userId: string): Promise<string[]> => {
+  const fields = await getActiveCustomFields(userId);
+  return fields
+    .filter(field => field.field_type === 'subcategory')
+    .filter(field => field.is_active === true)
+    .map(field => field.field_name);
+};
 // Get category ID by name
 export const getCategoryIdByName = async (name: string, userId: string): Promise<string | null> => {
   // First check if it's a default category
@@ -75,6 +86,19 @@ export const getConditionIdByName = async (name: string, userId: string): Promis
   return condition?.id || null;
 };
 
+// Get subcategory ID by name
+export const getSubcategoryIdByName = async (name: string, userId: string): Promise<string | null> => {
+  // First check if it's a default subcategory
+  const defaultSubcategory = DEFAULT_SUBCATEGORIES.find(sub => sub.name === name);
+  if (defaultSubcategory) {
+    return defaultSubcategory.id;
+  }
+  
+  // Then check custom fields
+  const fields = await getActiveCustomFields(userId);
+  const subcategory = fields.find(field => field.field_type === 'subcategory' && field.field_name === name && field.is_active === true);
+  return subcategory?.id || null;
+};
 // Get category name by ID
 export const getCategoryNameById = async (id: string, userId: string): Promise<string> => {
   // First check if it's a default category
@@ -103,6 +127,19 @@ export const getConditionNameById = async (id: string, userId: string): Promise<
   return condition?.field_name || id;
 };
 
+// Get subcategory name by ID
+export const getSubcategoryNameById = async (id: string, userId: string): Promise<string> => {
+  // First check if it's a default subcategory
+  const defaultSubcategory = DEFAULT_SUBCATEGORIES.find(sub => sub.id === id);
+  if (defaultSubcategory) {
+    return defaultSubcategory.name;
+  }
+  
+  // Then check custom fields
+  const fields = await getActiveCustomFields(userId);
+  const subcategory = fields.find(field => field.field_type === 'subcategory' && field.id === id && field.is_active === true);
+  return subcategory?.field_name || id;
+};
 // Synchronous versions for components that need immediate access
 export const getAllCategoriesSync = (customFields: CustomField[] = []) => {
   const customCategories = customFields
@@ -124,6 +161,15 @@ export const getAllConditionsSync = (customFields: CustomField[] = []) => {
   return [...DEFAULT_CONDITIONS, ...customConditions];
 };
 
+export const getAllSubcategoriesSync = (customFields: CustomField[] = []) => {
+  const customSubcategories = customFields
+    .filter(field => field.field_type === 'subcategory')
+    .filter(field => field.is_active === true)
+    .map(field => ({ id: field.id, name: field.field_name }));
+  
+  // Combine default subcategories with custom ones
+  return [...DEFAULT_SUBCATEGORIES, ...customSubcategories];
+};
 // Async versions that use the database function
 export const getAllCategories = async (userId: string) => {
   const fields = await getActiveCustomFields(userId);
@@ -206,6 +252,22 @@ export const removeCustomCondition = async (conditionName: string, userId: strin
 
   if (error) {
     console.error('Error removing custom condition:', error);
+    return { error: error.message };
+  }
+
+  return {};
+};
+
+export const removeCustomSubcategory = async (subcategoryName: string, userId: string) => {
+  const { error } = await supabase
+    .from('user_custom_fields')
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('field_type', 'subcategory')
+    .eq('field_name', subcategoryName);
+
+  if (error) {
+    console.error('Error removing custom subcategory:', error);
     return { error: error.message };
   }
 
