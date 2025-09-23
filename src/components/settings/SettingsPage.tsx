@@ -193,7 +193,49 @@ React.useEffect(() => {
     setDeletedDefaultConditions(updated);
     saveDeletedDefaultConditions(updated, user?.id);
   };
+const handleAddSubcategory = async () => {
+  if (newSubcategory.trim() && user?.id) {
+    try {
+      const result = await addCustomSubcategory(newSubcategory.trim(), user.id);
+      if (result.success) {
+        const updatedSubcategories = [...customSubcategories, newSubcategory.trim()];
+        setCustomSubcategories(updatedSubcategories);
+        saveCustomSubcategories(updatedSubcategories, user.id);
+        setNewSubcategory('');
+      }
+    } catch (error) {
+      console.error('Error adding subcategory:', error);
+    }
+  }
+};
 
+const handleEditSubcategory = (index: number, value: string) => {
+  setEditingSubcategoryIndex(index);
+  setEditingSubcategoryValue(value);
+};
+
+const handleSaveSubcategory = (index: number) => {
+  if (editingSubcategoryValue.trim()) {
+    const updated = [...customSubcategories];
+    updated[index] = editingSubcategoryValue.trim();
+    setCustomSubcategories(updated);
+    saveCustomSubcategories(updated, user?.id);
+  }
+  setEditingSubcategoryIndex(null);
+  setEditingSubcategoryValue('');
+};
+
+const handleDeleteSubcategory = async (index: number) => {
+  try {
+    const subcategoryToRemove = customSubcategories[index];
+    await removeCustomSubcategory(subcategoryToRemove, user?.id);
+    const updated = customSubcategories.filter((_, i) => i !== index);
+    setCustomSubcategories(updated);
+    saveCustomSubcategories(updated, user?.id);
+  } catch (error) {
+    console.error('Error deleting subcategory:', error);
+  }
+};
   const exportAllData = () => {
     const data = {
       profile,
@@ -667,6 +709,69 @@ React.useEffect(() => {
                     </div>
                   </div>
                   
+{/* Subcategories Section */}
+<div>
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+    Item Subcategories
+  </h3>
+  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+    Add more specific categories to better organize your collection (like "Bowls", "Plates", "Vases").
+  </p>
+  
+  <div className="space-y-3">
+    {/* Custom Subcategories */}
+    {customSubcategories.map((subcategory, index) => (
+      <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+        {editingSubcategoryIndex === index ? (
+          <input
+            type="text"
+            value={editingSubcategoryValue}
+            onChange={(e) => setEditingSubcategoryValue(e.target.value)}
+            onBlur={() => handleSaveSubcategory(index)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSaveSubcategory(index)}
+            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+            autoFocus
+          />
+        ) : (
+          <span className="text-gray-900 dark:text-white">{subcategory}</span>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleEditSubcategory(index, subcategory)}
+            className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDeleteSubcategory(index)}
+            className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    ))}
+    
+    {/* Add New Subcategory */}
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={newSubcategory}
+        onChange={(e) => setNewSubcategory(e.target.value)}
+        onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory()}
+        placeholder="Add a new subcategory (like 'Bowls', 'Vases')"
+        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+      />
+      <button
+        onClick={handleAddSubcategory}
+        disabled={!newSubcategory.trim()}
+        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+</div>
                   {/* Conditions Section */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
