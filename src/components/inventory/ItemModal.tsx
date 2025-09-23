@@ -81,12 +81,12 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   const [formData, setFormData] = useState({
     name: '',
     category: '',
+    subcategory: '',
     manufacturer: '',
     pattern: '',
     year_manufactured: '',
     purchase_price: '',
     current_value: '',
-    purchase_date: '',
     purchase_date: '',
     location: '',
     description: '',
@@ -101,6 +101,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
         // For existing items, use coalesce logic: custom field name if ID exists, otherwise text column
         let categoryName = item.category || '';
         let conditionName = item.condition || '';
+        let subcategoryName = item.subcategory || '';
         
         if (item.category_id && user?.id) {
           try {
@@ -128,9 +129,23 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
           }
         }
         
+        if (item.subcategory_id && user?.id) {
+          try {
+            const customFieldName = await getSubcategoryNameById(item.subcategory_id, user.id);
+            // Only use custom field name if lookup was successful (not returning the UUID)
+            if (customFieldName && customFieldName !== item.subcategory_id) {
+              subcategoryName = customFieldName;
+            }
+          } catch (error) {
+            console.error('Error getting subcategory name:', error);
+            // Keep the original subcategory text value on error
+          }
+        }
+        
         setFormData({
           name: item.name || '',
           category: categoryName,
+          subcategory: subcategoryName,
           manufacturer: item.manufacturer || '',
           pattern: item.pattern || '',
           year_manufactured: item.year_manufactured ? item.year_manufactured.toString() : '',
@@ -147,6 +162,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
         setFormData({
           name: '',
           category: '',
+          subcategory: '',
           manufacturer: '',
           pattern: '',
           year_manufactured: '',
@@ -178,8 +194,10 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [showNewConditionInput, setShowNewConditionInput] = useState(false);
+  const [showNewSubcategoryInput, setShowNewSubcategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newConditionName, setNewConditionName] = useState('');
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [addingCustomField, setAddingCustomField] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
