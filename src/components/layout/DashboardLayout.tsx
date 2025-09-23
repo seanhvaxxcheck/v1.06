@@ -73,7 +73,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {/* Logo */}
               <div className="flex items-center">
                 <img 
-                  src="/logo.png"
+                  src="/icons/F11E94A8-7D46-41AA-B474-B6848FC8F2F9.PNG"
                   alt="MyGlassCase Logo"
                   className="h-8 w-8 mr-3"
                 />
