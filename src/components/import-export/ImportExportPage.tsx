@@ -123,6 +123,7 @@ export const ImportExportPage: React.FC = () => {
           const itemData = {
             name: name,
             category: mappedCategory,
+            subcategory: row.subcategory || row.sub_category || '',
             manufacturer: row.manufacturer || row.brand || row.maker || '',
             pattern: row.pattern || row.design || '',
             year_manufactured: row.year_manufactured || row.year || row.date ? Number(row.year_manufactured || row.year || row.date) : null,

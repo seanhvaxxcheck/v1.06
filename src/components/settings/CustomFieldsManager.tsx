@@ -268,6 +268,69 @@ export const CustomFieldsManager: React.FC = () => {
         </div>
       </div>
 
+      {/* Subcategories Section */}
+      <div>
+        <div className="flex items-center mb-4">
+          <Tag className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Subcategories</h3>
+        </div>
+
+        {/* Default Subcategories */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Default Subcategories</h4>
+          <div className="flex flex-wrap gap-2">
+            {DEFAULT_SUBCATEGORIES.map((subcategory) => (
+              <span
+                key={subcategory.id}
+                className="inline-flex items-center px-3 py-1 bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-300 text-sm rounded-full"
+              >
+                {subcategory.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Subcategories */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Custom Subcategories</h4>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {customSubcategories.map((subcategory) => (
+              <span
+                key={subcategory}
+                className="inline-flex items-center px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 text-sm rounded-full"
+              >
+                {subcategory}
+                <button
+                  onClick={() => handleRemoveSubcategory(subcategory)}
+                  disabled={loading}
+                  className="ml-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 disabled:opacity-50"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+
+          {/* Add Subcategory Form */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newSubcategory}
+              onChange={(e) => setNewSubcategory(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory()}
+              placeholder="Enter new subcategory name"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white text-sm"
+            />
+            <button
+              onClick={handleAddSubcategory}
+              disabled={loading || !newSubcategory.trim()}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
       {/* Conditions Section */}
       <div>
         <div className="flex items-center mb-4">
