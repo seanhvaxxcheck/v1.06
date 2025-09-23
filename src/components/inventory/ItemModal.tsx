@@ -204,13 +204,30 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   const handleAddNewSubcategory = async () => {
     if (!newSubcategoryName.trim() || !user?.id) return;
 
+    const subcategoryName = newSubcategoryName.trim();
+    
+    // Check if subcategory already exists (case-insensitive)
+    const allExistingSubcategories = [
+      ...DEFAULT_SUBCATEGORIES.map(s => s.name.toLowerCase()),
+      ...availableSubcategories.map(s => s.toLowerCase())
+    ];
+    
+    if (allExistingSubcategories.includes(subcategoryName.toLowerCase())) {
+      setError('Subcategory already exists');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const result = await addCustomSubcategory(newSubcategoryName.trim(), user.id);
+      const result = await addCustomSubcategory(subcategoryName, user.id);
       
       if (result.error) {
         setError(result.error);
       } else {
+        // Refresh the custom fields to get the updated list
+        const updatedFields = await getActiveCustomFields(user.id);
+          subcategory: subcategoryName
+        
         // Update form data with the new subcategory
         setFormData(prev => ({ ...prev, subcategory: newSubcategoryName.trim() }));
         setNewSubcategoryName('');

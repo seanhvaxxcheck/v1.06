@@ -1,23 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Tag, Award } from 'lucide-react';
+import { Plus, X, Tag, Award, Layers } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   DEFAULT_CATEGORIES,
   DEFAULT_CONDITIONS,
+  DEFAULT_SUBCATEGORIES,
   getCustomCategories, 
   getCustomConditions, 
+  getCustomSubcategories,
   addCustomCategory, 
   addCustomCondition, 
+  addCustomSubcategory,
   removeCustomCategory, 
-  removeCustomCondition
+  removeCustomCondition,
+  removeCustomSubcategory
 } from '../../utils/customFields';
 
 export const CustomFieldsManager: React.FC = () => {
   const { user } = useAuth();
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [customConditions, setCustomConditions] = useState<string[]>([]);
+  const [customSubcategories, setCustomSubcategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [newCondition, setNewCondition] = useState('');
+  const [newSubcategory, setNewSubcategory] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,13 +33,15 @@ export const CustomFieldsManager: React.FC = () => {
       if (!user?.id) return;
       
       try {
-        const [categories, conditions] = await Promise.all([
+        const [categories, conditions, subcategories] = await Promise.all([
           getCustomCategories(user.id),
-          getCustomConditions(user.id)
+          getCustomConditions(user.id),
+          getCustomSubcategories(user.id)
         ]);
         
         setCustomCategories(categories);
         setCustomConditions(conditions);
+        setCustomSubcategories(subcategories);
       } catch (error) {
         console.error('Error loading custom fields:', error);
       }
@@ -112,6 +120,41 @@ export const CustomFieldsManager: React.FC = () => {
     }
   };
 
+  const handleAddSubcategory = async () => {
+    if (!newSubcategory.trim() || !user?.id) return;
+
+    const subcategoryName = newSubcategory.trim();
+    
+    // Check if subcategory already exists (case-insensitive)
+    const allExistingSubcategories = [
+      ...DEFAULT_SUBCATEGORIES.map(s => s.name.toLowerCase()),
+      ...customSubcategories.map(s => s.toLowerCase())
+    ];
+    
+    if (allExistingSubcategories.includes(subcategoryName.toLowerCase())) {
+      setError('Subcategory already exists');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await addCustomSubcategory(subcategoryName, user.id);
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setCustomSubcategories(prev => [...prev, subcategoryName]);
+        setNewSubcategory('');
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to add subcategory');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRemoveCategory = async (categoryName: string) => {
     if (!user?.id) return;
 
@@ -149,6 +192,27 @@ export const CustomFieldsManager: React.FC = () => {
       }
     } catch (error: any) {
       setError(error.message || 'Failed to remove condition');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveSubcategory = async (subcategoryName: string) => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await removeCustomSubcategory(subcategoryName, user.id);
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setCustomSubcategories(prev => prev.filter(sub => sub !== subcategoryName));
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to remove subcategory');
     } finally {
       setLoading(false);
     }
