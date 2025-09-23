@@ -263,7 +263,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         userError = response.error;
       } catch (fetchError) {
         console.error('Network error fetching user:', fetchError);
-        console.error('Switching to offline mode due to connection failure');
+        console.error('Error type:', fetchError instanceof TypeError ? 'TypeError (Network/CORS issue)' : typeof fetchError);
+        console.error('Error message:', fetchError instanceof Error ? fetchError.message : 'Unknown error');
+        
+        if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+          console.error('NETWORK CONNECTIVITY ISSUE DETECTED:');
+          console.error('- Check if Supabase URL is accessible');
+          console.error('- Verify internet connectivity');
+          console.error('- Check if CORS settings allow this domain');
+          console.error('Switching to offline mode due to connection failure');
+          setUseOfflineMode(true);
+          setProfile(null);
+          currentProfileRef.current = null;
+          setLoading(false);
+          return;
+        }
+        
+        // For other errors, still switch to offline mode but with different logging
+        console.error('Switching to offline mode due to auth error');
         setUseOfflineMode(true);
         setProfile(null);
         currentProfileRef.current = null;
