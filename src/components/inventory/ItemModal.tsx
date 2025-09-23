@@ -20,6 +20,7 @@ import {
   addCustomCategory,
   addCustomCondition,
   addCustomSubcategory,
+  DEFAULT_SUBCATEGORIES,
   type CustomField
 } from '../../utils/customFields';
 
