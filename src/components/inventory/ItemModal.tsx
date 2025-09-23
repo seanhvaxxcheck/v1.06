@@ -492,6 +492,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
       // Get category and condition IDs
       let categoryId = null;
       let conditionId = null;
+      let subcategoryId = null;
       
       if (formData.category && user?.id) {
         categoryId = await getCategoryIdByName(formData.category, user.id);
@@ -501,10 +502,16 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
         conditionId = await getConditionIdByName(formData.condition, user.id);
       }
       
+      if (formData.subcategory && user?.id) {
+        subcategoryId = await getSubcategoryIdByName(formData.subcategory, user.id);
+      }
+      
       const itemData = {
         ...formData,
         category: formData.category,
         category_id: categoryId,
+        subcategory: formData.subcategory,
+        subcategory_id: subcategoryId,
         condition: formData.condition,
         condition_id: conditionId,
         year_manufactured: formData.year_manufactured && formData.year_manufactured.toString().trim() !== '' 
