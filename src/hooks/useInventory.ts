@@ -28,6 +28,7 @@ export interface InventoryItem {
   description: string;
   photo_url: string | null;
   quantity: number;
+  purchase_date: string | null;
   deleted?: number;
   favorites?: number;
   created_at: string;

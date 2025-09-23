@@ -82,6 +82,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
     year_manufactured: '',
     purchase_price: '',
     current_value: '',
+    purchase_date: '',
     location: '',
     description: '',
     condition: 'good',
