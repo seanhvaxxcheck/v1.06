@@ -389,6 +389,14 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
                       <p className="font-medium text-gray-900 dark:text-white">{item.year_manufactured}</p>
                     </div>
                   )}
+                  {item.purchase_date && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Purchase Date</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {format(new Date(item.purchase_date), 'MMM dd, yyyy')}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Quantity</p>
                     <p className="font-medium text-gray-900 dark:text-white">{item.quantity || 1}</p>
