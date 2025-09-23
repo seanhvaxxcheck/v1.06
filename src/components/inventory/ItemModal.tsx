@@ -196,6 +196,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   const [showNewConditionInput, setShowNewConditionInput] = useState(false);
   const [showNewSubcategoryInput, setShowNewSubcategoryInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newConditionName, setNewConditionName] = useState('');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
