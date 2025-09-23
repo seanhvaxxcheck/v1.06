@@ -10,12 +10,16 @@ import {
   getActiveCustomFields,
   getAllCategoriesSync,
   getAllConditionsSync,
+  getAllSubcategoriesSync,
   getCategoryIdByName,
   getConditionIdByName,
+  getSubcategoryIdByName,
+  getSubcategoryNameById,
   getCategoryNameById,
   getConditionNameById,
   addCustomCategory,
   addCustomCondition,
+  addCustomSubcategory,
   type CustomField
 } from '../../utils/customFields';
 
