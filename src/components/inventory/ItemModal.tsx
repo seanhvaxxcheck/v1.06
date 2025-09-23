@@ -83,6 +83,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
     purchase_price: '',
     current_value: '',
     purchase_date: '',
+    purchase_date: '',
     location: '',
     description: '',
     condition: 'good',
@@ -131,6 +132,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
           year_manufactured: item.year_manufactured ? item.year_manufactured.toString() : '',
           purchase_price: item.purchase_price ? item.purchase_price.toString() : '',
           current_value: item.current_value ? item.current_value.toString() : '',
+          purchase_date: item.purchase_date || '',
           location: item.location || '',
           description: item.description || '',
           condition: conditionName,
@@ -146,6 +148,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
           year_manufactured: '',
           purchase_price: '',
           current_value: '',
+          purchase_date: '',
           location: '',
           description: '',
           condition: '',
@@ -482,8 +485,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
           : null,
         purchase_price: formData.purchase_price ? Number(formData.purchase_price) : 0,
         current_value: formData.current_value ? Number(formData.current_value) : 0,
-        purchase_date: formData.purchase_date || null,
         quantity: Number(formData.quantity),
+        purchase_date: formData.purchase_date || null,
         photo_url: photoUrl,
       };
 
@@ -778,6 +781,18 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
                   }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                   placeholder="Enter price"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Purchase Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.purchase_date}
+                  onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
