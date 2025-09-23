@@ -482,6 +482,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
           : null,
         purchase_price: formData.purchase_price ? Number(formData.purchase_price) : 0,
         current_value: formData.current_value ? Number(formData.current_value) : 0,
+        purchase_date: formData.purchase_date || null,
         quantity: Number(formData.quantity),
         photo_url: photoUrl,
       };
