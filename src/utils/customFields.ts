@@ -226,6 +226,24 @@ export const addCustomCondition = async (conditionName: string, userId: string) 
   return {};
 };
 
+export const addCustomSubcategory = async (subcategoryName: string, userId: string) => {
+  const { error } = await supabase
+    .from('user_custom_fields')
+    .insert({
+      user_id: userId,
+      field_type: 'subcategory',
+      field_name: subcategoryName,
+      is_active: true,
+    });
+
+  if (error) {
+    console.error('Error adding custom subcategory:', error);
+    return { error: error.message };
+  }
+
+  return {};
+};
+
 export const removeCustomCategory = async (categoryName: string, userId: string) => {
   const { error } = await supabase
     .from('user_custom_fields')
