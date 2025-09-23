@@ -42,12 +42,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
   );
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [customConditions, setCustomConditions] = useState<string[]>([]);
+  const [customSubcategories, setCustomSubcategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [newCondition, setNewCondition] = useState('');
+  const [newSubcategory, setNewSubcategory] = useState('');
   const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
   const [editingCategoryValue, setEditingCategoryValue] = useState('');
   const [editingConditionIndex, setEditingConditionIndex] = useState<number | null>(null);
+  const [editingSubcategoryIndex, setEditingSubcategoryIndex] = useState<number | null>(null);
   const [editingConditionValue, setEditingConditionValue] = useState('');
+  const [editingSubcategoryValue, setEditingSubcategoryValue] = useState('');
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState('');
   const [importing, setImporting] = useState(false);
@@ -68,12 +72,14 @@ React.useEffect(() => {
         const [categories, conditions, deletedCats, deletedConds] = await Promise.all([
           getCustomCategories(user.id),
           getCustomConditions(user.id),
+          getCustomSubcategories(user.id),
           getDeletedDefaultCategories(user.id),
           getDeletedDefaultConditions(user.id)
         ]);
         
         setCustomCategories(categories);
         setCustomConditions(conditions);
+        setCustomSubcategories(deletedCats); // This should be subcategories
         setDeletedDefaultCategories(deletedCats);
         setDeletedDefaultConditions(deletedConds);
       } catch (error) {
