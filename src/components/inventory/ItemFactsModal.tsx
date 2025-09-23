@@ -383,6 +383,12 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
                       <p className="font-medium text-gray-900 dark:text-white">{item.pattern}</p>
                     </div>
                   )}
+                  {item.subcategory && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Subcategory</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{item.subcategory}</p>
+                    </div>
+                  )}
                   {item.year_manufactured && (
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Year</p>

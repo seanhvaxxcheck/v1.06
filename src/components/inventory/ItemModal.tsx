@@ -10,12 +10,16 @@ import {
   getActiveCustomFields,
   getAllCategoriesSync,
   getAllConditionsSync,
+  getAllSubcategoriesSync,
   getCategoryIdByName,
   getConditionIdByName,
+  getSubcategoryIdByName,
   getCategoryNameById,
   getConditionNameById,
+  getSubcategoryNameById,
   addCustomCategory,
   addCustomCondition,
+  addCustomSubcategory,
   type CustomField
 } from '../../utils/customFields';
 
@@ -77,6 +81,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   const [formData, setFormData] = useState({
     name: '',
     category: '',
+    subcategory: '',
     manufacturer: '',
     pattern: '',
     year_manufactured: '',
@@ -97,6 +102,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
         // For existing items, use coalesce logic: custom field name if ID exists, otherwise text column
         let categoryName = item.category || '';
         let conditionName = item.condition || '';
+        let subcategoryName = item.subcategory || '';
         
         if (item.category_id && user?.id) {
           try {
@@ -124,9 +130,23 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
           }
         }
         
+        if (item.subcategory_id && user?.id) {
+          try {
+            const customFieldName = await getSubcategoryNameById(item.subcategory_id, user.id);
+            // Only use custom field name if lookup was successful (not returning the UUID)
+            if (customFieldName && customFieldName !== item.subcategory_id) {
+              subcategoryName = customFieldName;
+            }
+          } catch (error) {
+            console.error('Error getting subcategory name:', error);
+            // Keep the original subcategory text value on error
+          }
+        }
+        
         setFormData({
           name: item.name || '',
           category: categoryName,
+          subcategory: subcategoryName,
           manufacturer: item.manufacturer || '',
           pattern: item.pattern || '',
           year_manufactured: item.year_manufactured ? item.year_manufactured.toString() : '',
@@ -143,6 +163,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
         setFormData({
           name: '',
           category: '',
+          subcategory: '',
           manufacturer: '',
           pattern: '',
           year_manufactured: '',
@@ -171,11 +192,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [customConditions, setCustomConditions] = useState<string[]>([]);
+  const [customSubcategories, setCustomSubcategories] = useState<string[]>([]);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [showNewConditionInput, setShowNewConditionInput] = useState(false);
+  const [showNewSubcategoryInput, setShowNewSubcategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newConditionName, setNewConditionName] = useState('');
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [addingCustomField, setAddingCustomField] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -199,9 +223,13 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
           const conditions = fields
             .filter(field => field.field_type === 'condition')
             .map(field => field.field_name);
+          const subcategories = fields
+            .filter(field => field.field_type === 'subcategory')
+            .map(field => field.field_name);
             
           setCustomCategories(categories);
           setCustomConditions(conditions);
+          setCustomSubcategories(subcategories);
         } catch (error) {
           console.error('Error fetching custom fields:', error);
         }
@@ -296,6 +324,49 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
     }
   };
 
+  const handleAddNewSubcategory = async () => {
+    if (!newSubcategoryName.trim() || !user?.id) return;
+
+    // Clear any previous form errors
+    setFormError('');
+
+    // Check if subcategory already exists (case-insensitive)
+    const existingSubcategory = allSubcategories.find(
+      subcategory => subcategory.name.toLowerCase() === newSubcategoryName.trim().toLowerCase()
+    );
+    
+    if (existingSubcategory) {
+      setToastMessage(`Subcategory "${newSubcategoryName.trim()}" already exists. Please choose a different name.`);
+      setToastVisible(true);
+      return;
+    }
+
+    setAddingCustomField(true);
+    try {
+      const result = await addCustomSubcategory(newSubcategoryName.trim(), user.id);
+      
+      if (result.error) {
+        setToastMessage(result.error);
+        setToastVisible(true);
+      } else {
+        // Refresh custom fields
+        const fields = await getActiveCustomFields(user.id);
+        setCustomFields(fields);
+        
+        // Set the new subcategory as selected
+        setFormData({ ...formData, subcategory: newSubcategoryName.trim() });
+        
+        // Reset form
+        setNewSubcategoryName('');
+        setShowNewSubcategoryInput(false);
+      }
+    } catch (error: any) {
+      setToastMessage(error.message || 'Failed to add subcategory');
+      setToastVisible(true);
+    } finally {
+      setAddingCustomField(false);
+    }
+  };
   // Get all available categories and conditions
   const allCategories = useMemo(() => 
     getAllCategoriesSync(customFields || []),
@@ -307,6 +378,10 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
     [customFields]
   );
 
+  const allSubcategories = useMemo(() => 
+    getAllSubcategoriesSync(customFields || []),
+    [customFields]
+  );
   // Cleanup camera stream when component unmounts or modal closes
   useEffect(() => {
     return () => {
@@ -465,6 +540,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
       // Get category and condition IDs
       let categoryId = null;
       let conditionId = null;
+      let subcategoryId = null;
       
       if (formData.category && user?.id) {
         categoryId = await getCategoryIdByName(formData.category, user.id);
@@ -474,10 +550,16 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
         conditionId = await getConditionIdByName(formData.condition, user.id);
       }
       
+      if (formData.subcategory && user?.id) {
+        subcategoryId = await getSubcategoryIdByName(formData.subcategory, user.id);
+      }
+      
       const itemData = {
         ...formData,
         category: formData.category,
         category_id: categoryId,
+        subcategory: formData.subcategory,
+        subcategory_id: subcategoryId,
         condition: formData.condition,
         condition_id: conditionId,
         year_manufactured: formData.year_manufactured && formData.year_manufactured.toString().trim() !== '' 
@@ -723,6 +805,68 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Subcategory
+                </label>
+                {showNewSubcategoryInput ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => {
+                        setNewSubcategoryName(e.target.value);
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddNewSubcategory()}
+                      placeholder="Enter new subcategory name"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddNewSubcategory}
+                      disabled={addingCustomField || !newSubcategoryName.trim()}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors font-medium"
+                    >
+                      {addingCustomField ? 'Adding...' : 'Add'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewSubcategoryInput(false);
+                        setNewSubcategoryName('');
+                      }}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.subcategory}
+                    onChange={(e) => {
+                      if (e.target.value === '__add_new__') {
+                        setShowNewSubcategoryInput(true);
+                      } else {
+                        setFormData({ ...formData, subcategory: e.target.value });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Select a subcategory</option>
+                    {allSubcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.name}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                    <option value="__add_new__" className="font-medium text-green-600">
+                      + Add New Subcategory
+                    </option>
+                  </select>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

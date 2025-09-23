@@ -6,8 +6,10 @@ import {
   getActiveCustomFields,
   getCategoryNameById,
   getConditionNameById,
+  getSubcategoryNameById,
   getCategoryIdByName,
   getConditionIdByName,
+  getSubcategoryIdByName,
   type CustomField
 } from '../utils/customFields';
 
@@ -16,6 +18,8 @@ export interface InventoryItem {
   user_id: string;
   category: string;
   category_id: string | null;
+  subcategory: string;
+  subcategory_id: string | null;
   condition: string;
   condition_id: string | null;
   name: string;
@@ -96,6 +100,7 @@ export const useInventory = () => {
         // Start with the text column values as fallback
         let categoryName = item.category || '';
         let conditionName = item.condition || '';
+        let subcategoryName = item.subcategory || '';
         
         // If we have category_id, try to get the custom field name
         if (item.category_id) {
@@ -125,10 +130,25 @@ export const useInventory = () => {
           }
         }
         
+        // If we have subcategory_id, try to get the custom field name
+        if (item.subcategory_id) {
+          try {
+            const customFieldName = await getSubcategoryNameById(item.subcategory_id, user.id);
+            // Only use the custom field name if it's not the UUID itself (successful lookup)
+            if (customFieldName && customFieldName !== item.subcategory_id) {
+              subcategoryName = customFieldName;
+            }
+          } catch (error) {
+            console.error('Error getting subcategory name:', error);
+            // Keep the original subcategory text value on error
+          }
+        }
+        
         return {
           ...item,
           category: categoryName,
           condition: conditionName,
+          subcategory: subcategoryName,
         };
       }));
       
@@ -158,6 +178,7 @@ export const useInventory = () => {
       // Get category and condition IDs
       let categoryId = null;
       let conditionId = null;
+      let subcategoryId = null;
       
       if (item.category) {
         categoryId = await getCategoryIdByName(item.category, user.id);
@@ -167,6 +188,10 @@ export const useInventory = () => {
         conditionId = await getConditionIdByName(item.condition, user.id);
       }
       
+      if (item.subcategory) {
+        subcategoryId = await getSubcategoryIdByName(item.subcategory, user.id);
+      }
+      
       // Insert directly into inventory_items table
       const { data, error } = await supabase
         .from('inventory_items')
@@ -174,6 +199,8 @@ export const useInventory = () => {
           user_id: user.id,
           category: item.category,
           category_id: categoryId,
+          subcategory: item.subcategory || '',
+          subcategory_id: subcategoryId,
           condition: item.condition,
           condition_id: conditionId,
           name: item.name,
@@ -237,6 +264,10 @@ export const useInventory = () => {
       
       if (updates.condition) {
         updateData.condition_id = await getConditionIdByName(updates.condition, user.id);
+      }
+      
+      if (updates.subcategory) {
+        updateData.subcategory_id = await getSubcategoryIdByName(updates.subcategory, user.id);
       }
       
       const { data, error } = await supabase

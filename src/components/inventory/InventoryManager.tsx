@@ -61,6 +61,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -97,6 +98,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   // Get all available categories and conditions
   const allCategories = useMemo(() => 
     customFields.filter(field => field.field_type === 'category').map(field => ({ id: field.id, name: field.field_name })),
+    [customFields]
+  );
+  
+  const allSubcategories = useMemo(() => 
+    customFields.filter(field => field.field_type === 'subcategory').map(field => ({ id: field.id, name: field.field_name })),
     [customFields]
   );
   
@@ -162,6 +168,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                            (item.manufacturer || '').toLowerCase().includes(searchLower) ||
                            (item.pattern || '').toLowerCase().includes(searchLower) ||
                            (item.category || '').toLowerCase().includes(searchLower) ||
+                           (item.subcategory || '').toLowerCase().includes(searchLower) ||
                            (item.description || '').toLowerCase().includes(searchLower) ||
                            (item.location || '').toLowerCase().includes(searchLower) ||
                            (item.condition || '').toLowerCase().includes(searchLower) ||
@@ -171,11 +178,12 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                            (item.quantity && item.quantity.toString().includes(searchTerm || ''));
       
       const matchesCategory = categoryFilter === 'all' || item.category_id === categoryFilter || item.category === categoryFilter;
+      const matchesSubcategory = subcategoryFilter === 'all' || item.subcategory_id === subcategoryFilter || item.subcategory === subcategoryFilter;
       const matchesCondition = conditionFilter === 'all' || item.condition_id === conditionFilter || item.condition === conditionFilter;
 
-      return matchesSearch && matchesCategory && matchesCondition;
+      return matchesSearch && matchesCategory && matchesSubcategory && matchesCondition;
     });
-  }, [items, searchTerm, categoryFilter, conditionFilter]);
+  }, [items, searchTerm, categoryFilter, subcategoryFilter, conditionFilter]);
   
   const exportToCSV = () => {
     const headers = [
@@ -491,6 +499,18 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             </select>
 
             <select
+              value={subcategoryFilter}
+              onChange={(e) => setSubcategoryFilter(e.target.value)}
+              className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <option value="all">All Subcategories</option>
+              {allSubcategories.map((subcategory) => (
+                <option key={subcategory.id} value={subcategory.id}>
+                  {subcategory.name}
+                </option>
+              ))}
+            </select>
+            <select
               value={conditionFilter}
               onChange={(e) => setConditionFilter(e.target.value)}
               className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -605,6 +625,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     </p>
                   )}
 
+                  {item.subcategory && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {item.subcategory}
+                    </p>
+                  )}
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-lg font-bold text-green-600 dark:text-green-400">
@@ -668,6 +693,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     onClick={() => {
                       setSearchTerm('');
                       setCategoryFilter('all');
+                      setSubcategoryFilter('all');
                       setConditionFilter('all');
                     }}
                     className="text-green-500 hover:text-green-600 font-medium"
