@@ -198,6 +198,32 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newConditionName, setNewConditionName] = useState('');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
+
+  const handleAddNewSubcategory = async () => {
+    if (!newSubcategoryName.trim() || !user?.id) return;
+
+    setIsLoading(true);
+    try {
+      const result = await addCustomSubcategory(newSubcategoryName.trim(), user.id);
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        // Update form data with the new subcategory
+        setFormData(prev => ({ ...prev, subcategory: newSubcategoryName.trim() }));
+        setNewSubcategoryName('');
+        setShowNewSubcategoryInput(false);
+        // Refresh custom fields to include the new subcategory
+        if (onRefresh) {
+          onRefresh();
+        }
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to add subcategory');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const [addingCustomField, setAddingCustomField] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
