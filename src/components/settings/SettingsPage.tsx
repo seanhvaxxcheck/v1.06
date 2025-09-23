@@ -69,24 +69,24 @@ React.useEffect(() => {
   const loadCustomFields = async () => {
     if (user) {
       try {
-        const [categories, conditions, deletedCats, deletedConds] = await Promise.all([
+        const [categories, conditions, subcategories, deletedCats, deletedConds] = await Promise.all([
           getCustomCategories(user.id),
           getCustomConditions(user.id),
-          getCustomSubcategories(user.id),
+          getCustomSubcategories(user.id), // This should load actual subcategories
           getDeletedDefaultCategories(user.id),
           getDeletedDefaultConditions(user.id)
         ]);
         
         setCustomCategories(categories);
         setCustomConditions(conditions);
-        setCustomSubcategories(deletedCats); // This should be subcategories
+        setCustomSubcategories(subcategories); // Fix: use actual subcategories
         setDeletedDefaultCategories(deletedCats);
         setDeletedDefaultConditions(deletedConds);
       } catch (error) {
         console.error('Error loading custom fields:', error);
-        // Set empty arrays as fallbacks
         setCustomCategories([]);
         setCustomConditions([]);
+        setCustomSubcategories([]); // Fix: set empty subcategories array
         setDeletedDefaultCategories([]);
         setDeletedDefaultConditions([]);
       }
@@ -95,6 +95,7 @@ React.useEffect(() => {
   
   loadCustomFields();
 }, [user]);
+
 
   React.useEffect(() => {
     const fetchSubscription = async () => {
