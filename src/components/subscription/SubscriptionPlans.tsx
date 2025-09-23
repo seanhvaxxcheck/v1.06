@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, Crown, Star, Zap, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStripe } from '../../hooks/useStripe';
+import { supabase } from '../../lib/supabase';
 import { stripeProducts } from '../../stripe-config'; 
 
 interface SubscriptionPlansProps {
@@ -10,7 +11,7 @@ interface SubscriptionPlansProps {
 }
 
 export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onNavigate, subscription }) => {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, refreshProfile } = useAuth();
   const { createCheckoutSession, loading, error } = useStripe();
 
   const getIcon = (name: string) => {
@@ -27,7 +28,55 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onNavigate
   };
 
   const handleSubscribe = async (priceId: string) => {
-    await createCheckoutSession(priceId, 'subscription');
+    // Find the plan by priceId
+    const plan = stripeProducts.find(p => p.priceId === priceId);
+    
+    if (!plan) {
+      console.error('Plan not found for priceId:', priceId);
+      return;
+    }
+
+    // If it's a free plan, update profile directly
+    if (plan.price === 0) {
+      console.log('Processing free plan selection for user:', user?.id);
+      
+      if (!user) {
+        console.error('No user found for free plan selection');
+        return;
+      }
+
+      try {
+        // Update user's profile to active free tier
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            subscription_status: 'active',
+            subscription_tier: 'free',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Error updating profile for free plan:', updateError);
+          return;
+        }
+
+        console.log('Successfully updated profile for free plan');
+        
+        // Refresh the user's profile in the auth context
+        await refreshProfile(user.id);
+        
+        // Navigate to dashboard
+        if (onNavigate) {
+          onNavigate('dashboard');
+        }
+      } catch (error) {
+        console.error('Error processing free plan selection:', error);
+      }
+    } else {
+      // For paid plans, use Stripe checkout
+      await createCheckoutSession(priceId, 'subscription');
+    }
   };
 
   const isCurrentPlan = (priceId: string) => {
@@ -129,7 +178,7 @@ export const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({ onNavigate
                   ) : isCurrentPlan(plan.priceId) ? (
                     'Current Plan'
                   ) : (
-                    'Get Started'
+                    plan.price === 0 ? 'Get Started Free' : 'Get Started'
                   )}
                 </button>
               </div>

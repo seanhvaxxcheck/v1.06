@@ -72,6 +72,12 @@ const AppContent: React.FC = () => {
   const needsSubscription = () => {
     if (subscriptionLoading) return false;
 
+    // Check if user has an active free subscription
+    if (profile?.subscription_status === 'active' && profile?.subscription_tier === 'free') {
+      console.log('User has active free subscription - no subscription selection needed');
+      return false;
+    }
+
     // Always require subscription selection if no active subscription
     if (!subscription) {
       console.log('No subscription found - directing to subscription plans');
