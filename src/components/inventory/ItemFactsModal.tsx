@@ -358,6 +358,11 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
                   }`}>
                     {item.category}
                   </span>
+                  {item.subcategory && (
+                    <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+                      {item.subcategory}
+                    </span>
+                  )}
                   <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
                     item.condition === 'excellent' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
                     item.condition === 'very_good' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
