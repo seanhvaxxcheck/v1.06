@@ -726,6 +726,67 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
                   </select>
                 )}
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Subcategory
+                </label>
+                {showNewSubcategoryInput ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => {
+                        setNewSubcategoryName(e.target.value);
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddNewSubcategory()}
+                      placeholder="Enter new subcategory name"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddNewSubcategory}
+                      disabled={addingCustomField || !newSubcategoryName.trim()}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors font-medium"
+                    >
+                      {addingCustomField ? 'Adding...' : 'Add'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewSubcategoryInput(false);
+                        setNewSubcategoryName('');
+                      }}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.subcategory}
+                    onChange={(e) => {
+                      if (e.target.value === '__add_new__') {
+                        setShowNewSubcategoryInput(true);
+                      } else {
+                        setFormData({ ...formData, subcategory: e.target.value });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Select a subcategory</option>
+                    {allSubcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.name}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                    <option value="__add_new__" className="font-medium text-green-600">
+                      + Add New Subcategory
+                    </option>
+                  </select>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
