@@ -235,10 +235,6 @@ export const useInventory = () => {
         updateData.category_id = await getCategoryIdByName(updates.category, user.id);
       }
       
-      if (updates.subcategory) {
-        updateData.subcategory_id = await getSubcategoryIdByName(updates.subcategory, user.id);
-      }
-      
       if (updates.condition) {
         updateData.condition_id = await getConditionIdByName(updates.condition, user.id);
       }
