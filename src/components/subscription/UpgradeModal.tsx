@@ -135,6 +135,50 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     return newLimit > currentLimit;
   };
 
+  // Filter plans to show only actual upgrades
+  const filteredPlans = paidPlans.filter(plan => {
+    console.log(`\n--- Filtering plan: ${plan.name} ---`);
+    console.log('Plan price:', plan.price);
+    console.log('Plan itemLimit:', plan.itemLimit);
+    
+    // If no current subscription, show all paid plans
+    if (!currentSubscription?.price_id) {
+      console.log('No current subscription - showing plan');
+      return true;
+    }
+    
+    const currentProduct = getProductByPriceId(currentSubscription.price_id);
+    console.log('Current product:', currentProduct);
+    
+    if (!currentProduct) {
+      console.log('No current product found - showing plan');
+      return true;
+    }
+    
+    // Compare item limits - only show plans with higher limits
+    // Handle unlimited (-1) as always being higher than any finite limit
+    const currentLimit = currentProduct.itemLimit || 0;
+    const newLimit = plan.itemLimit || 0;
+    
+    console.log(`Comparing limits: current=${currentLimit}, new=${newLimit}`);
+    
+    // If new plan has unlimited items (-1), it's always an upgrade from finite limits
+    if (newLimit === -1 && currentLimit !== -1) {
+      console.log('New plan is unlimited, current is finite - showing plan');
+      return true;
+    }
+    
+    // If current plan is unlimited (-1), no upgrades available
+    if (currentLimit === -1) {
+      console.log('Current plan is unlimited - hiding plan');
+      return false;
+    }
+    
+    // For finite limits, show plans with higher limits
+    const shouldShow = newLimit > currentLimit;
+    console.log(`Should show ${plan.name}? ${shouldShow}`);
+    return shouldShow;
+  });
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -156,53 +200,17 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         </div>
 
         <div className="p-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            {paidPlans.filter(plan => {
-              console.log(`\n--- Filtering plan: ${plan.name} ---`);
-              console.log('Plan price:', plan.price);
-              console.log('Plan itemLimit:', plan.itemLimit);
-              
-              // If no current subscription, show all paid plans
-              if (!currentSubscription?.price_id) {
-                console.log('No current subscription - showing plan');
-                return true;
-              }
-              
-              const currentProduct = getProductByPriceId(currentSubscription.price_id);
-              console.log('Current product:', currentProduct);
-              
-              if (!currentProduct) {
-                console.log('No current product found - showing plan');
-                return true;
-              }
-              
-              // Compare item limits - only show plans with higher limits
-              // Handle unlimited (-1) as always being higher than any finite limit
-              const currentLimit = currentProduct.itemLimit || 0;
-              const newLimit = plan.itemLimit || 0;
-              
-              console.log(`Comparing limits: current=${currentLimit}, new=${newLimit}`);
-              
-              // If new plan has unlimited items (-1), it's always an upgrade from finite limits
-              if (newLimit === -1 && currentLimit !== -1) {
-                console.log('New plan is unlimited, current is finite - showing plan');
-                return true;
-              }
-              
-              // If current plan is unlimited (-1), no upgrades available
-              if (currentLimit === -1) {
-                console.log('Current plan is unlimited - hiding plan');
-                return false;
-              }
-              
-              // For finite limits, show plans with higher limits
-              const shouldShow = newLimit > currentLimit;
-              console.log(`Should show ${plan.name}? ${shouldShow}`);
-              return shouldShow;
-            }).map((plan) => (
+          <div className={`grid gap-6 max-w-5xl mx-auto ${
+            filteredPlans.length === 1 
+              ? 'grid-cols-1 justify-items-center' 
+              : 'md:grid-cols-2'
+          }`}>
+            {filteredPlans.map((plan) => (
               <div
                 key={plan.id}
                 className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 transition-all duration-300 hover:scale-105 ${
+                  filteredPlans.length === 1 ? 'max-w-md w-full' : ''
+                } ${
                   plan.popular
                     ? 'border-green-500 ring-2 ring-green-200 dark:ring-green-800'
                     : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600'
