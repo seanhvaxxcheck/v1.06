@@ -224,7 +224,10 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AppContent />
+          <Routes>
+            <Route path="/share/:shareId" element={<PublicCollectionView />} />
+            <Route path="/*" element={<AppContent />} />
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

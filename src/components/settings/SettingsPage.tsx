@@ -25,6 +25,7 @@ import {
   getAllConditions
 } from '../../utils/customFields';
 import { UpgradeModal } from '../subscription/UpgradeModal';
+import { ShareCollectionManager } from './ShareCollectionManager';
 
 interface SettingsPageProps {
   onPageChange?: (page: string) => void;
@@ -112,6 +113,7 @@ React.useEffect(() => {
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'subscription', name: 'My Plan', icon: CreditCard },
     { id: 'categories', name: 'My Categories', icon: FileText },
+    { id: 'share-collection', name: 'Share Collection', icon: Share },
     //{ id: 'notifications', name: 'Notifications', icon: Bell },
     //{ id: 'privacy', name: 'Privacy & Security', icon: Shield },
     { id: 'import-export', name: 'Backup & Restore', icon: Upload },
@@ -751,6 +753,10 @@ React.useEffect(() => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'share-collection' && (
+                <ShareCollectionManager />
               )}
 
               {activeTab === 'import-export' && (
