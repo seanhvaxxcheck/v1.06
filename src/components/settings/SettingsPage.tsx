@@ -214,7 +214,50 @@ React.useEffect(() => {
       'Name', 'Category', 'Manufacturer', 'Pattern', 'Year', 'Quantity',
       'Purchase Price', 'Current Value', 'Condition', 'Location', 'Description'
     ];
-    
+    // Add subcategory management functions
+const handleAddSubcategory = async () => {
+  if (newSubcategory.trim() && user?.id) {
+    try {
+      const result = await addCustomSubcategory(newSubcategory.trim(), user.id);
+      if (result.success) {
+        const updatedSubcategories = [...customSubcategories, newSubcategory.trim()];
+        setCustomSubcategories(updatedSubcategories);
+        saveCustomSubcategories(updatedSubcategories, user.id);
+        setNewSubcategory('');
+      }
+    } catch (error) {
+      console.error('Error adding subcategory:', error);
+    }
+  }
+};
+
+const handleEditSubcategory = (index: number, value: string) => {
+  setEditingSubcategoryIndex(index);
+  setEditingSubcategoryValue(value);
+};
+
+const handleSaveSubcategory = (index: number) => {
+  if (editingSubcategoryValue.trim()) {
+    const updated = [...customSubcategories];
+    updated[index] = editingSubcategoryValue.trim();
+    setCustomSubcategories(updated);
+    saveCustomSubcategories(updated, user?.id);
+  }
+  setEditingSubcategoryIndex(null);
+  setEditingSubcategoryValue('');
+};
+
+const handleDeleteSubcategory = async (index: number) => {
+  try {
+    const subcategoryToRemove = customSubcategories[index];
+    await removeCustomSubcategory(subcategoryToRemove, user?.id);
+    const updated = customSubcategories.filter((_, i) => i !== index);
+    setCustomSubcategories(updated);
+    saveCustomSubcategories(updated, user?.id);
+  } catch (error) {
+    console.error('Error deleting subcategory:', error);
+  }
+};
     const csvContent = [
       headers.join(','),
       ...items.map(item => [
