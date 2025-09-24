@@ -296,15 +296,15 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onModeChange }) => {
                 >
                   Forgot your password?
                 </button>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
                   Don't have an account?{' '}
-                  <button
-                    onClick={() => onModeChange('signup')}
-                    className="text-green-600 hover:text-green-500 font-medium transition-colors"
-                  >
-                    Sign up
-                  </button>
                 </p>
+                <button
+                    onClick={() => onModeChange('signup')}
+                    className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  >
+                    Create Account
+                </button>
               </>
             )}
             
