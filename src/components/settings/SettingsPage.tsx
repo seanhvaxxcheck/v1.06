@@ -42,6 +42,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
   );
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [customConditions, setCustomConditions] = useState<string[]>([]);
+    { id: 'share-collection', name: 'Share Collection', icon: Share },
   const [customSubcategories, setCustomSubcategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [newCondition, setNewCondition] = useState('');
