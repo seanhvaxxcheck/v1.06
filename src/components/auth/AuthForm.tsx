@@ -129,8 +129,19 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onModeChange }) => {
           case 'Signup is disabled':
             setError('New user registration is currently disabled. Please contact support.');
             break;
+          case 'For security purposes, you can only request this once every 60 seconds':
+            setError('Please wait 60 seconds before requesting another password reset email.');
+            break;
+          case 'Unable to validate email address: invalid format':
+            setError('Please enter a valid email address.');
+            break;
           default:
-            setError(error.message);
+            // For password reset, show a generic message to prevent user enumeration
+            if (mode === 'reset') {
+              setError('If an account with that email exists, you will receive a password reset link. Please check your inbox and spam folder.');
+            } else {
+              setError(error.message);
+            }
         }
       } else {
         setError(error?.message || 'An unexpected error occurred. Please try again.');

@@ -532,12 +532,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
+    console.log('=== PASSWORD RESET DEBUG ===');
+    console.log('Email:', email);
+    console.log('useOfflineMode:', useOfflineMode);
+    console.log('Supabase URL configured:', !!import.meta.env.VITE_SUPABASE_URL);
+    console.log('Supabase Anon Key configured:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+    
     if (useOfflineMode) {
+      console.log('In offline mode - returning mock success');
       return { data: null, error: null };
     }
     
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-    return { data, error };
+    try {
+      console.log('Calling supabase.auth.resetPasswordForEmail...');
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      console.log('Supabase resetPasswordForEmail response:');
+      console.log('- Data:', data);
+      console.log('- Error:', error);
+      console.log('- Error code:', error?.code);
+      console.log('- Error message:', error?.message);
+      console.log('=== END PASSWORD RESET DEBUG ===');
+      
+      return { data, error };
+    } catch (networkError: any) {
+      console.error('Network error during password reset:', networkError);
+      console.log('=== END PASSWORD RESET DEBUG ===');
+      return { data: null, error: { message: 'Network error. Please check your connection and try again.' } };
+    }
   };
 
   const value = {
