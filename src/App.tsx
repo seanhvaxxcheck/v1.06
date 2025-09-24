@@ -14,6 +14,7 @@ import { WishlistPage } from './components/wishlist/WishlistPage';
 import { ImportExportPage } from './components/import-export/ImportExportPage';
 import { SettingsPage } from './components/settings/SettingsPage';
 import SupabaseDebugInfo from './components/SupabaseDebugInfo';
+import { PublicCollectionView } from './components/shared/PublicCollectionView';
 
 const AppContent: React.FC = () => {
   const { user, profile, loading } = useAuth();
