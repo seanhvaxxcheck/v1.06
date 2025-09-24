@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, CreditCard, Bell, Shield, Download, Trash2, Upload, FileText, Smartphone, Plus, Edit, LogOut, Monitor, HelpCircle, Mail, Info, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { User, CreditCard, Bell, Shield, Download, Trash2, Upload, FileText, Smartphone, Plus, Edit, LogOut, Monitor, HelpCircle, Mail, Info, AlertCircle, CheckCircle, X, Share } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInventory } from '../../hooks/useInventory';
 import { useStripe } from '../../hooks/useStripe';
@@ -42,7 +42,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
   );
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [customConditions, setCustomConditions] = useState<string[]>([]);
-    { id: 'share-collection', name: 'Share Collection', icon: Share },
   const [customSubcategories, setCustomSubcategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [newCondition, setNewCondition] = useState('');
