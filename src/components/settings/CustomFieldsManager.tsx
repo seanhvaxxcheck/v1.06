@@ -12,7 +12,7 @@ import {
   addCustomCondition, 
   addCustomSubcategory,
   removeCustomCategory, 
-  removeCustomCondition
+  removeCustomCondition,
   removeCustomSubcategory
 } from '../../utils/customFields';
 
@@ -154,6 +154,7 @@ export const CustomFieldsManager: React.FC = () => {
       setLoading(false);
     }
   };
+
   const handleRemoveCategory = async (categoryName: string) => {
     if (!user?.id) return;
 
@@ -170,41 +171,6 @@ export const CustomFieldsManager: React.FC = () => {
       }
     } catch (error: any) {
       setError(error.message || 'Failed to remove category');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddSubcategory = async () => {
-    if (!newSubcategory.trim() || !user?.id) return;
-
-    const subcategoryName = newSubcategory.trim();
-    
-    // Check if subcategory already exists (case-insensitive)
-    const allExistingSubcategories = [
-      ...DEFAULT_SUBCATEGORIES.map(s => s.name.toLowerCase()),
-      ...customSubcategories.map(s => s.toLowerCase())
-    ];
-    
-    if (allExistingSubcategories.includes(subcategoryName.toLowerCase())) {
-      setError('Subcategory already exists');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await addCustomSubcategory(subcategoryName, user.id);
-      
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setCustomSubcategories(prev => [...prev, subcategoryName]);
-        setNewSubcategory('');
-      }
-    } catch (error: any) {
-      setError(error.message || 'Failed to add subcategory');
     } finally {
       setLoading(false);
     }
