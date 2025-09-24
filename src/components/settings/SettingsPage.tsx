@@ -12,12 +12,15 @@ import {
   getCustomSubcategories,
   saveCustomConditions,
   getDeletedDefaultCategories,
+  addCustomSubcategory,
   saveDeletedDefaultCategories,
   getDeletedDefaultConditions,
+  removeCustomSubcategory,
   saveDeletedDefaultConditions,
   DEFAULT_CATEGORIES,
   saveCustomSubcategories,
   DEFAULT_CONDITIONS,
+  DEFAULT_SUBCATEGORIES,
   getAllCategories,
   getAllConditions
 } from '../../utils/customFields';
@@ -36,7 +39,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
   const [subscription, setSubscription] = useState<any>(null);
   const [notificationPermission, setNotificationPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
-};
+  );
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [customConditions, setCustomConditions] = useState<string[]>([]);
   const [customSubcategories, setCustomSubcategories] = useState<string[]>([]);
@@ -60,37 +63,38 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
   const [deletedDefaultCategories, setDeletedDefaultCategories] = useState<string[]>([]);
   const [deletedDefaultConditions, setDeletedDefaultConditions] = useState<string[]>([]);
 
-  // Load custom categories, conditions, and subcategories on component mount
-  React.useEffect(() => {
-    const loadCustomFields = async () => {
-      if (user) {
-        try {
-          const [categories, conditions, subcategories, deletedCats, deletedConds] = await Promise.all([
-            getCustomCategories(user.id),
-            getCustomConditions(user.id),
-            getCustomSubcategories(user.id),
-            getDeletedDefaultCategories(user.id),
-            getDeletedDefaultConditions(user.id)
-          ]);
-          
-          setCustomCategories(categories);
-          setCustomConditions(conditions);
-          setCustomSubcategories(subcategories);
-          setDeletedDefaultCategories(deletedCats);
-          setDeletedDefaultConditions(deletedConds);
-        } catch (error) {
-          console.error('Error loading custom fields:', error);
-          setCustomCategories([]);
-          setCustomConditions([]);
-          setCustomSubcategories([]);
-          setDeletedDefaultCategories([]);
-          setDeletedDefaultConditions([]);
-        }
+  // Load custom categories and conditions on component mount
+ // Fix the useEffect to properly load subcategories
+React.useEffect(() => {
+  const loadCustomFields = async () => {
+    if (user) {
+      try {
+        const [categories, conditions, subcategories, deletedCats, deletedConds] = await Promise.all([
+          getCustomCategories(user.id),
+          getCustomConditions(user.id),
+          getCustomSubcategories(user.id), // This should load actual subcategories
+          getDeletedDefaultCategories(user.id),
+          getDeletedDefaultConditions(user.id)
+        ]);
+        
+        setCustomCategories(categories);
+        setCustomConditions(conditions);
+        setCustomSubcategories(subcategories); // Fix: use actual subcategories
+        setDeletedDefaultCategories(deletedCats);
+        setDeletedDefaultConditions(deletedConds);
+      } catch (error) {
+        console.error('Error loading custom fields:', error);
+        setCustomCategories([]);
+        setCustomConditions([]);
+        setCustomSubcategories([]); // Fix: set empty subcategories array
+        setDeletedDefaultCategories([]);
+        setDeletedDefaultConditions([]);
       }
-    };
-    
-    loadCustomFields();
-  }, [user]);
+    }
+  };
+  
+  loadCustomFields();
+}, [user]);
 
   React.useEffect(() => {
     const fetchSubscription = async () => {
@@ -108,12 +112,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'subscription', name: 'My Plan', icon: CreditCard },
     { id: 'categories', name: 'My Categories', icon: FileText },
+    //{ id: 'notifications', name: 'Notifications', icon: Bell },
+    //{ id: 'privacy', name: 'Privacy & Security', icon: Shield },
     { id: 'import-export', name: 'Backup & Restore', icon: Upload },
     { id: 'pwa', name: 'Install App', icon: Smartphone },
     { id: 'support', name: 'Support', icon: HelpCircle },
   ];
 
-  // Category handlers
   const handleAddCategory = () => {
     if (newCategory.trim()) {
       const updatedCategories = [...customCategories, newCategory.trim()];
@@ -123,9 +128,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
     }
   };
 
+  const handleAddCondition = () => {
+    if (newCondition.trim()) {
+      const updatedConditions = [...customConditions, newCondition.trim()];
+      setCustomConditions(updatedConditions);
+      saveCustomConditions(updatedConditions, user?.id);
+      setNewCondition('');
+    }
+  };
+
   const handleEditCategory = (index: number, value: string) => {
     setEditingCategoryIndex(index);
     setEditingCategoryValue(value);
+  };
+
+  const handleEditCondition = (index: number, value: string) => {
+    setEditingConditionIndex(index);
+    setEditingConditionValue(value);
   };
 
   const handleSaveCategory = (index: number) => {
@@ -139,33 +158,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
     setEditingCategoryValue('');
   };
 
-  const handleDeleteCategory = (index: number) => {
-    const updated = customCategories.filter((_, i) => i !== index);
-    setCustomCategories(updated);
-    saveCustomCategories(updated, user?.id);
-  };
-
-  const handleDeleteDefaultCategory = (categoryName: string) => {
-    const updated = [...deletedDefaultCategories, categoryName];
-    setDeletedDefaultCategories(updated);
-    saveDeletedDefaultCategories(updated, user?.id);
-  };
-
-  // Condition handlers
-  const handleAddCondition = () => {
-    if (newCondition.trim()) {
-      const updatedConditions = [...customConditions, newCondition.trim()];
-      setCustomConditions(updatedConditions);
-      saveCustomConditions(updatedConditions, user?.id);
-      setNewCondition('');
-    }
-  };
-
-  const handleEditCondition = (index: number, value: string) => {
-    setEditingConditionIndex(index);
-    setEditingConditionValue(value);
-  };
-
   const handleSaveCondition = (index: number) => {
     if (editingConditionValue.trim()) {
       const updated = [...customConditions];
@@ -177,10 +169,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
     setEditingConditionValue('');
   };
 
+  const handleDeleteCategory = (index: number) => {
+    const updated = customCategories.filter((_, i) => i !== index);
+    setCustomCategories(updated);
+    saveCustomCategories(updated, user?.id);
+  };
+
   const handleDeleteCondition = (index: number) => {
     const updated = customConditions.filter((_, i) => i !== index);
     setCustomConditions(updated);
     saveCustomConditions(updated, user?.id);
+  };
+
+  const handleDeleteDefaultCategory = (categoryName: string) => {
+    const updated = [...deletedDefaultCategories, categoryName];
+    setDeletedDefaultCategories(updated);
+    saveDeletedDefaultCategories(updated, user?.id);
   };
 
   const handleDeleteDefaultCondition = (conditionName: string) => {
@@ -189,39 +193,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
     saveDeletedDefaultConditions(updated, user?.id);
   };
 
-  // Subcategory handlers
-  const handleAddSubcategory = () => {
-    if (newSubcategory.trim()) {
-      const updatedSubcategories = [...customSubcategories, newSubcategory.trim()];
-      setCustomSubcategories(updatedSubcategories);
-      saveCustomSubcategories(updatedSubcategories, user?.id);
-      setNewSubcategory('');
-    }
-  };
-
-  const handleEditSubcategory = (index: number, value: string) => {
-    setEditingSubcategoryIndex(index);
-    setEditingSubcategoryValue(value);
-  };
-
-  const handleSaveSubcategory = (index: number) => {
-    if (editingSubcategoryValue.trim()) {
-      const updated = [...customSubcategories];
-      updated[index] = editingSubcategoryValue.trim();
-      setCustomSubcategories(updated);
-      saveCustomSubcategories(updated, user?.id);
-    }
-    setEditingSubcategoryIndex(null);
-    setEditingSubcategoryValue('');
-  };
-
-  const handleDeleteSubcategory = (index: number) => {
-    const updated = customSubcategories.filter((_, i) => i !== index);
-    setCustomSubcategories(updated);
-    saveCustomSubcategories(updated, user?.id);
-  };
-
-  // Export handlers
   const exportAllData = () => {
     const data = {
       profile,
@@ -243,7 +214,39 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
       'Name', 'Category', 'Manufacturer', 'Pattern', 'Year', 'Quantity',
       'Purchase Price', 'Current Value', 'Condition', 'Location', 'Description'
     ];
-    
+
+    // Replace your subcategory handler functions with these simplified versions
+
+const handleAddSubcategory = () => {
+  if (newSubcategory.trim()) {
+    const updatedSubcategories = [...customSubcategories, newSubcategory.trim()];
+    setCustomSubcategories(updatedSubcategories);
+    saveCustomSubcategories(updatedSubcategories, user?.id);
+    setNewSubcategory('');
+  }
+};
+
+const handleEditSubcategory = (index: number, value: string) => {
+  setEditingSubcategoryIndex(index);
+  setEditingSubcategoryValue(value);
+};
+
+const handleSaveSubcategory = (index: number) => {
+  if (editingSubcategoryValue.trim()) {
+    const updated = [...customSubcategories];
+    updated[index] = editingSubcategoryValue.trim();
+    setCustomSubcategories(updated);
+    saveCustomSubcategories(updated, user?.id);
+  }
+  setEditingSubcategoryIndex(null);
+  setEditingSubcategoryValue('');
+};
+
+const handleDeleteSubcategory = (index: number) => {
+  const updated = customSubcategories.filter((_, i) => i !== index);
+  setCustomSubcategories(updated);
+  saveCustomSubcategories(updated, user?.id);
+};
     const csvContent = [
       headers.join(','),
       ...items.map(item => [
@@ -328,15 +331,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
 
       for (const [index, row] of data.entries()) {
         try {
+          // Map common column variations to our expected format
           const name = row.name || row.item_name || row.title || row.description || `Imported Item ${index + 1}`;
           const category = (row.category || row.type || '').toLowerCase();
           
-          let mappedCategory = 'Jadite';
+          // Map category variations to our custom categories
+          let mappedCategory = 'Jadite'; // default
           if (category.includes('milk') || category.includes('white')) {
             mappedCategory = 'Milk Glass';
           } else if (category.includes('jadite') || category.includes('jadeite') || category.includes('jade') || category.includes('green')) {
             mappedCategory = 'Jadite';
           } else {
+            // Try to match against user's custom categories
             const userCategories = getAllCategories(user?.id);
             const matchedCategory = userCategories.find(cat => 
               cat.name.toLowerCase().includes(category) || category.includes(cat.name.toLowerCase())
@@ -346,6 +352,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
             }
           }
 
+          // Map condition variations
           let mappedCondition = 'good';
           const condition = (row.condition || '').toLowerCase();
           if (condition.includes('excellent') || condition.includes('mint')) {
@@ -691,70 +698,69 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
                     </div>
                   </div>
                   
-                  {/* Subcategories Section */}
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                      Item Subcategories
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Add more specific categories to better organize your collection (like "Bowls", "Plates", "Vases").
-                    </p>
-                    
-                    <div className="space-y-3">
-                      {/* Custom Subcategories */}
-                      {customSubcategories.map((subcategory, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
-                          {editingSubcategoryIndex === index ? (
-                            <input
-                              type="text"
-                              value={editingSubcategoryValue}
-                              onChange={(e) => setEditingSubcategoryValue(e.target.value)}
-                              onBlur={() => handleSaveSubcategory(index)}
-                              onKeyPress={(e) => e.key === 'Enter' && handleSaveSubcategory(index)}
-                              className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                              autoFocus
-                            />
-                          ) : (
-                            <span className="text-gray-900 dark:text-white">{subcategory}</span>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleEditSubcategory(index, subcategory)}
-                              className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteSubcategory(index)}
-                              className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {/* Add New Subcategory */}
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newSubcategory}
-                          onChange={(e) => setNewSubcategory(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory()}
-                          placeholder="Add a new subcategory (like 'Bowls', 'Vases')"
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                        />
-                        <button
-                          onClick={handleAddSubcategory}
-                          disabled={!newSubcategory.trim()}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
+{/* Subcategories Section */}
+<div>
+  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+    Item Subcategories
+  </h3>
+  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+    Add more specific categories to better organize your collection (like "Bowls", "Plates", "Vases").
+  </p>
+  
+  <div className="space-y-3">
+    {/* Custom Subcategories */}
+    {customSubcategories.map((subcategory, index) => (
+      <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+        {editingSubcategoryIndex === index ? (
+          <input
+            type="text"
+            value={editingSubcategoryValue}
+            onChange={(e) => setEditingSubcategoryValue(e.target.value)}
+            onBlur={() => handleSaveSubcategory(index)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSaveSubcategory(index)}
+            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+            autoFocus
+          />
+        ) : (
+          <span className="text-gray-900 dark:text-white">{subcategory}</span>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleEditSubcategory(index, subcategory)}
+            className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDeleteSubcategory(index)}
+            className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    ))}
+    
+    {/* Add New Subcategory */}
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={newSubcategory}
+        onChange={(e) => setNewSubcategory(e.target.value)}
+        onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory()}
+        placeholder="Add a new subcategory (like 'Bowls', 'Vases')"
+        className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+      />
+      <button
+        onClick={handleAddSubcategory}
+        disabled={!newSubcategory.trim()}
+        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+</div>
                   {/* Conditions Section */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -932,6 +938,99 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
                           </div>
                         </div>
                       )}
+
+                      {/* Column Guide Toggle */}
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={() => setShowColumnGuide(!showColumnGuide)}
+                          className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
+                        >
+                          <Info className="h-4 w-4 mr-1" />
+                          {showColumnGuide ? 'Hide' : 'Show'} Detailed Column Guide - (This Section is not complete yet)
+                        </button>
+                      </div>
+
+                      {/* Detailed Column Guide */} 
+                      {showColumnGuide && (
+                        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-gray-700 dark:text-gray-300">Detailed Import Guide : This section is not complete yet</h4>
+                            <button
+                              onClick={() => setShowColumnGuide(false)}
+                              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="space-y-4 text-sm">
+                            <div>
+                              <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Category Values:</h5>
+                              <p className="text-gray-600 dark:text-gray-400 mb-1">
+                                Use any of your custom categories:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {getAllCategories(user?.id).map((cat) => (
+                                  <code key={cat.id} className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">
+                                    {cat.name}
+                                  </code>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Condition Values:</h5>
+                              <div className="flex flex-wrap gap-2">
+                                {getAllConditions(user?.id).map((cond) => (
+                                  <code key={cond.id} className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">
+                                    {cond.name}
+                                  </code>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
+                              <p className="text-blue-700 dark:text-blue-300 text-xs">
+                                <strong>Pro Tip:</strong> The system is flexible with column names. "Item Name", "Product Name", "Title" will all map to the name field. 
+                                Similarly, "Brand", "Maker", "Company\" will map to manufacturer.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Column Requirements */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-3">
+                        Required Column Headers
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <h5 className="font-medium text-blue-700 dark:text-blue-300 mb-2">Required:</h5>
+                          <ul className="space-y-1 text-blue-600 dark:text-blue-400">
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">name</code> - Item name</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">category</code> - Item type</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-blue-700 dark:text-blue-300 mb-2">Optional:</h5>
+                          <ul className="space-y-1 text-blue-600 dark:text-blue-400">
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">manufacturer</code> - Brand/maker</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">pattern</code> - Pattern name</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">year_manufactured</code> - Year made</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">quantity</code> - Number of items</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">purchase_price</code> - What you paid</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">current_value</code> - Current worth</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">condition</code> - excellent, very_good, good, fair, poor</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">location</code> - Where it's stored</li>
+                            <li><code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">description</code> - Additional notes</li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-3 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          <strong>Tip:</strong> Column headers are flexible - "Name", "Item Name", or "Title" will all work. 
+                          Categories can be any of your custom categories or "Jadite", "Milk Glass", etc.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Download Template */}
@@ -1111,6 +1210,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
                           <button
                             onClick={() => {
                               navigator.clipboard.writeText('support@myglasscase.com');
+                              // You could add a toast notification here
                             }}
                             className="px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded text-sm hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors"
                           >
@@ -1147,7 +1247,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Version</span>
                           <span className="inline-flex px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 text-sm rounded-full font-medium">
-                            v1.06
+                            v1.04
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -1158,7 +1258,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Last Updated</span>
-                          <span className="text-sm text-gray-900 dark:text-white">September 23, 2025</span>
+                          <span className="text-sm text-gray-900 dark:text-white">September 21, 2025</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
@@ -1186,7 +1286,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
                 </div>
               )}
 
-            </div>
+            </div> 
           </div>
         </div>
       </div>
@@ -1198,3 +1298,4 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
       />
     </div>
   );
+};
