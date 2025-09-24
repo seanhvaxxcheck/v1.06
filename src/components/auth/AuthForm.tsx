@@ -112,7 +112,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onModeChange }) => {
       if (error?.message) {
         switch (error.message) {
           case 'Invalid login credentials':
-            setError('Invalid email or password. Please check your credentials and try again.');
+            setError('Email not found or incorrect password. If you don\'t have an account yet, please sign up below.');
             break;
           case 'Email not confirmed':
             setError('Please check your email and click the confirmation link before signing in.');
