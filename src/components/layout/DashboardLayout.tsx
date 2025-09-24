@@ -71,14 +71,17 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             {/* Left side - Logo and Navigation */}
             <div className="flex items-center space-x-8">
               {/* Logo */}
-              <div className="flex items-center">
+              <button 
+                onClick={() => onPageChange('dashboard')}
+                className="flex items-center hover:opacity-80 transition-opacity"
+              >
                 <img 
                   src="https://igymhkccvdlvkfjbmpxp.supabase.co/storage/v1/object/public/item-photos/fa5c3453-f4b9-4a35-bb90-03a30d6c72c9/F11E94A8-7D46-41AA-B474-B6848FC8F2F9.PNG"
                   alt="MyGlassCase Logo"
                   className="h-8 w-8 mr-3"
                 />
                 <h1 className="text-xl font-bold text-green-500">MyGlassCase</h1>
-              </div>
+              </button>
 
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-1">
