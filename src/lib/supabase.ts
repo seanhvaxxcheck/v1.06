@@ -253,6 +253,56 @@ export type Database = {
           deleted_at?: string | null;
         };
       };
+      share_links: {
+        Row: {
+          id: string;
+          user_id: string;
+          unique_share_id: string;
+          settings: {
+            hide_purchase_price?: boolean;
+            hide_purchase_date?: boolean;
+            hide_location?: boolean;
+            hide_description?: boolean;
+            hide_personal_notes?: boolean;
+          } | null;
+          is_active: boolean;
+          expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          unique_share_id?: string;
+          settings?: {
+            hide_purchase_price?: boolean;
+            hide_purchase_date?: boolean;
+            hide_location?: boolean;
+            hide_description?: boolean;
+            hide_personal_notes?: boolean;
+          } | null;
+          is_active?: boolean;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          unique_share_id?: string;
+          settings?: {
+            hide_purchase_price?: boolean;
+            hide_purchase_date?: boolean;
+            hide_location?: boolean;
+            hide_description?: boolean;
+            hide_personal_notes?: boolean;
+          } | null;
+          is_active?: boolean;
+          expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 };

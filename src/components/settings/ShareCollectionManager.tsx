@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Share, Copy, Eye, EyeOff, Plus, Trash2, ExternalLink, CheckCircle, AlertCircle, Globe } from 'lucide-react';
+import { Share, Copy, Eye, EyeOff, Plus, Trash2, ExternalLink, CheckCircle, AlertCircle, Globe, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useShareLinks } from '../../hooks/useShareLinks';
 
