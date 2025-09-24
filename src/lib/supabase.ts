@@ -253,6 +253,41 @@ export type Database = {
           deleted_at?: string | null;
         };
       };
+      share_links: {
+        Row: {
+          id: string;
+          user_id: string;
+          unique_share_id: string;
+          settings: {
+            hide_purchase_price?: boolean;
+          };
+          is_active: boolean;
+          created_at: string;
+          expires_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          unique_share_id?: string;
+          settings?: {
+            hide_purchase_price?: boolean;
+          };
+          is_active?: boolean;
+          created_at?: string;
+          expires_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          unique_share_id?: string;
+          settings?: {
+            hide_purchase_price?: boolean;
+          };
+          is_active?: boolean;
+          created_at?: string;
+          expires_at?: string | null;
+        };
+      };
     };
   };
 };
