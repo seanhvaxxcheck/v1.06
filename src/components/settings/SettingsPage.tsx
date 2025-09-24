@@ -513,7 +513,7 @@ React.useEffect(() => {
                         </p>
                       </div>
                       <span className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 text-sm font-medium rounded-full">
-                        v1.05
+                        v1.06
                       </span>
                     </div>
                   </div>
