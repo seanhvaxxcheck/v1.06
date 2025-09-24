@@ -7,6 +7,7 @@ import { useStripe } from './hooks/useStripe';
 import { AuthForm } from './components/auth/AuthForm';
 import { SubscriptionPlans } from './components/subscription/SubscriptionPlans';
 import { SuccessPage } from './components/subscription/SuccessPage';
+import { PublicCollectionView } from './components/shared/PublicCollectionView';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { DashboardHome } from './components/dashboard/DashboardHome';
 import { InventoryManager } from './components/inventory/InventoryManager';
@@ -14,15 +15,25 @@ import { WishlistPage } from './components/wishlist/WishlistPage';
 import { ImportExportPage } from './components/import-export/ImportExportPage';
 import { SettingsPage } from './components/settings/SettingsPage';
 import SupabaseDebugInfo from './components/SupabaseDebugInfo';
+import { Routes, Route, useLocation } from 'react-router-dom';
 
 const AppContent: React.FC = () => {
   const { user, profile, loading } = useAuth();
   const { getSubscription } = useStripe();
+  const location = useLocation();
   const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [subscription, setSubscription] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [itemIdToOpen, setItemIdToOpen] = useState<string | null>(null);
+
+  // Check if we're on a public share route
+  const isPublicShareRoute = location.pathname.startsWith('/share/');
+
+  // If on public share route, render the public view directly
+  if (isPublicShareRoute) {
+    return <PublicCollectionView />;
+  }
 
   // Check for success page from URL params
   useEffect(() => {
@@ -224,7 +235,10 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AppContent />
+          <Routes>
+            <Route path="/share/:shareId" element={<PublicCollectionView />} />
+            <Route path="/*" element={<AppContent />} />
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
