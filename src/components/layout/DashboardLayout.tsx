@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Package, Settings, LogOut, Menu, X, Moon, Sun, Crown, ChartBar as BarChart3, Heart, Hop as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles } from 'lucide-react'seAuth } from '../../contexts/AuthContext';
+import { Package, Settings, LogOut, Menu, X, Moon, Sun, Crown, ChartBar as BarChart3, Heart, Hop as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useStripe } from '../../hooks/useStripe';
 import { getProductByPriceId } from '../../stripe-config';
