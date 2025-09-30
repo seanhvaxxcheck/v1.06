@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { X, Upload, Camera, RotateCcw, AlertCircle, CheckCircle, Loader2, Crown, Zap } from 'lucide-react';
+import { X, Upload, Camera, RotateCcw, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Loader as Loader2, Crown, Zap } from 'lucide-react';
 import { useInventory, type InventoryItem } from '../../hooks/useInventory';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStripe } from '../../hooks/useStripe';
@@ -81,19 +81,19 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   }, [onClose, onUpgradeResult]);
   
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    subcategory: '',
-    manufacturer: '',
-    pattern: '',
-    year_manufactured: '',
-    purchase_price: '',
-    current_value: '',
-    purchase_date: '',
-    purchase_date: '',
-    location: '',
-    description: '',
-    condition: 'good',
+    name: item?.name || prefilledData?.name || '',
+    category: item?.category || prefilledData?.category || '',
+    subcategory: item?.subcategory || prefilledData?.subcategory || '',
+    manufacturer: item?.manufacturer || prefilledData?.manufacturer || '',
+    pattern: item?.pattern || prefilledData?.pattern || '',
+    year_manufactured: item?.year_manufactured?.toString() || prefilledData?.year_manufactured?.toString() || '',
+    quantity: item?.quantity?.toString() || prefilledData?.quantity?.toString() || '1',
+    purchase_price: item?.purchase_price?.toString() || prefilledData?.purchase_price?.toString() || '',
+    current_value: item?.current_value?.toString() || prefilledData?.current_value?.toString() || '',
+    location: item?.location || prefilledData?.location || '',
+    description: item?.description || prefilledData?.description || '',
+    condition: item?.condition || prefilledData?.condition || '',
+    purchase_date: item?.purchase_date || prefilledData?.purchase_date || '',
     quantity: '',
   });
 

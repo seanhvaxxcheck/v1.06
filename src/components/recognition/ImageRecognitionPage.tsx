@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, Sparkles, Eye, Save, ArrowRight, AlertCircle, CheckCircle, Loader2, X, Star } from 'lucide-react';
+import { Camera, Upload, Sparkles, Eye, Save, ArrowRight, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Loader as Loader2, X, Star } from 'lucide-react';
 import { useImageRecognition, type RecognitionMatch, type ImageRecognitionResult } from '../../hooks/useImageRecognition';
 import { useInventory } from '../../hooks/useInventory';
 import { ItemModal } from '../inventory/ItemModal';
