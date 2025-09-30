@@ -149,32 +149,6 @@ export const useEbayIntegration = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);</parameter>
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'get_auth_url',
-          user_id: user.id,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get eBay authorization URL');
-      }
-
-      const data = await response.json();
-      return { authUrl: data.auth_url };
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to connect to eBay';
-      setError(errorMessage);
-      return { error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
   }, [user]);
 
   const listItemOnEbay = useCallback(async (
