@@ -14,7 +14,8 @@ import {
   Plus,
   Search,
   Bell,
-  HelpCircle
+  HelpCircle,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -45,6 +46,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navigation = [
     { name: 'Home', id: 'dashboard', icon: Home },
     { name: 'Collection', id: 'inventory', icon: Package },
+    { name: 'AI Recognition', id: 'recognition', icon: Sparkles },
     // TODO: WISHLIST FEATURE - Uncomment the line below to reactivate wishlist
     // { name: 'Wishlist', id: 'wishlist', icon: Heart },
     { name: 'Wishlist', id: 'wishlist-coming-soon', icon: Heart, disabled: true },

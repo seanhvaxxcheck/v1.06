@@ -35,6 +35,9 @@ export interface InventoryItem {
   purchase_date: string | null;
   deleted?: number;
   favorites?: number;
+  ai_identified?: boolean;
+  ai_confidence?: number;
+  ai_analysis_id?: string;
   created_at: string;
   updated_at: string;
 }

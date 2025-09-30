@@ -15,6 +15,7 @@ import { ImportExportPage } from './components/import-export/ImportExportPage';
 import { SettingsPage } from './components/settings/SettingsPage';
 import SupabaseDebugInfo from './components/SupabaseDebugInfo';
 import { PublicCollectionView } from './components/shared/PublicCollectionView';
+import { ImageRecognitionPage } from './components/recognition/ImageRecognitionPage';
 
 const AppContent: React.FC = () => {
   const { user, profile, loading } = useAuth();
@@ -122,6 +123,7 @@ const AppContent: React.FC = () => {
     switch (currentPage) {
       case 'dashboard': return <DashboardHome onPageChange={handlePageChange} subscription={subscription} />;
       case 'inventory': return <InventoryManager itemIdToOpen={itemIdToOpen} onItemOpened={handleInventoryItemOpened} />;
+      case 'recognition': return <ImageRecognitionPage />;
       // TODO: WISHLIST FEATURE - Uncomment the line below to reactivate wishlist
       // case 'wishlist': return <WishlistPage />;
       case 'wishlist':

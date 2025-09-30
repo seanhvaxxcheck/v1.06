@@ -25,6 +25,8 @@ import {
 
 interface ItemModalProps {
   item?: InventoryItem | null;
+  prefilledData?: any;
+  selectedImageFile?: File | null;
   onClose: () => void;
   onUpgradeResult?: (result: 'success' | 'cancelled', message: string) => void;
   currentSubscription?: any;
