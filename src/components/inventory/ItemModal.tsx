@@ -81,19 +81,19 @@ export const ItemModal: React.FC<ItemModalProps> = ({ item, onClose, onUpgradeRe
   }, [onClose, onUpgradeResult]);
   
   const [formData, setFormData] = useState({
-    name: item?.name || prefilledData?.name || '',
-    category: item?.category || prefilledData?.category || '',
-    subcategory: item?.subcategory || prefilledData?.subcategory || '',
-    manufacturer: item?.manufacturer || prefilledData?.manufacturer || '',
-    pattern: item?.pattern || prefilledData?.pattern || '',
-    year_manufactured: item?.year_manufactured?.toString() || prefilledData?.year_manufactured?.toString() || '',
-    quantity: item?.quantity?.toString() || prefilledData?.quantity?.toString() || '1',
-    purchase_price: item?.purchase_price?.toString() || prefilledData?.purchase_price?.toString() || '',
-    current_value: item?.current_value?.toString() || prefilledData?.current_value?.toString() || '',
-    location: item?.location || prefilledData?.location || '',
-    description: item?.description || prefilledData?.description || '',
-    condition: item?.condition || prefilledData?.condition || '',
-    purchase_date: item?.purchase_date || prefilledData?.purchase_date || '',
+    name: item?.name || '',
+    category: item?.category || '',
+    subcategory: item?.subcategory || '',
+    manufacturer: item?.manufacturer || '',
+    pattern: item?.pattern || '',
+    year_manufactured: item?.year_manufactured?.toString() || '',
+    quantity: item?.quantity?.toString() || '1',
+    purchase_price: item?.purchase_price?.toString() || '',
+    current_value: item?.current_value?.toString() || '',
+    location: item?.location || '',
+    description: item?.description || '',
+    condition: item?.condition || '',
+    purchase_date: item?.purchase_date || '',
     quantity: '',
   });
 
