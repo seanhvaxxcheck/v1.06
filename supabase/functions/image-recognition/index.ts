@@ -28,8 +28,18 @@ interface RecognitionMatch {
 interface ImageRecognitionResponse {
   matches: RecognitionMatch[];
   primaryMatch: RecognitionMatch;
+  webSearchResults: WebSearchResult[];
   analysisId: string;
   processedAt: string;
+}
+
+interface WebSearchResult {
+  title: string;
+  url: string;
+  price?: number;
+  imageUrl?: string;
+  source: 'ebay' | 'etsy' | 'mercari' | 'facebook';
+  snippet?: string;
 }
 
 interface GoogleVisionLabel {
