@@ -460,326 +460,6 @@ function generateFallbackMatches(analysisId: string): RecognitionMatch[] {
   return fallbackMatches;
 }
 
-Deno.serve(async (req: Request) => {
-  try {
-    console.log('=== IMAGE RECOGNITION REQUEST START ===');
-    console.log('Method:', req.method);
-    console.log('URL:', req.url);
-    
-    if (req.method === "OPTIONS") {
-      return new Response(null, {
-        status: 200,
-        headers: corsHeaders,
-      });
-    }
-
-    if (req.method !== "POST") {
-      return new Response(
-        JSON.stringify({ error: "Method not allowed" }),
-        {
-          status: 405,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    let requestData: ImageRecognitionRequest;
-    try {
-      requestData = await req.json();
-    } catch (parseError) {
-      console.error('Failed to parse request JSON:', parseError);
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON in request body" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    if (!requestData.image || !requestData.filename) {
-      return new Response(
-        JSON.stringify({ error: "Image data and filename are required" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    console.log('Processing image recognition request:', {
-      filename: requestData.filename,
-      fileType: requestData.fileType,
-      imageSize: requestData.image.length
-    });
-
-    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    // Get API configuration from environment variables
-    const googleVisionApiKey = Deno.env.get('GOOGLE_VISION_API_KEY');
-    const customModelEndpoint = Deno.env.get('CUSTOM_MODEL_ENDPOINT');
-    const customModelApiKey = Deno.env.get('CUSTOM_MODEL_API_KEY');
-    const useCustomModel = Deno.env.get('USE_CUSTOM_MODEL') === 'true';
-
-    console.log('API Configuration:', {
-      hasGoogleVisionKey: !!googleVisionApiKey,
-      hasCustomModelEndpoint: !!customModelEndpoint,
-      hasCustomModelKey: !!customModelApiKey,
-      useCustomModel
-    });
-
-    let matches: RecognitionMatch[] = [];
-    let visionResponse: GoogleVisionResponse | null = null;
-    let webSearchResults: WebSearchResult[] = [];
-
-    try {
-      // Step 1: Try custom model first if configured
-      if (useCustomModel && customModelEndpoint && customModelApiKey) {
-        console.log('Using custom model for recognition...');
-        
-        // Future: Call custom model
-        // const customResult = await callCustomModel(requestData.image, customModelEndpoint, customModelApiKey);
-        console.log('Custom model integration ready but not yet implemented');
-      }
-      
-      // Step 2: Use Google Vision API (primary or fallback)
-      if (matches.length === 0 && googleVisionApiKey) {
-        console.log('Using Google Vision API for recognition...');
-        
-        visionResponse = await callGoogleVisionAPI(requestData.image, googleVisionApiKey);
-        
-        // Step 3: Enhance with ChatGPT if available
-        let chatGPTResult = null;
-        const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-        if (openaiApiKey && visionResponse) {
-          const visionData = {
-            labels: visionResponse.responses[0].labelAnnotations?.map(l => l.description) || [],
-            webEntities: visionResponse.responses[0].webDetection?.webEntities?.map(w => w.description) || [],
-            bestGuessLabel: visionResponse.responses[0].webDetection?.bestGuessLabels?.[0]?.label || '',
-            ocrText: visionResponse.responses[0].textAnnotations?.map(t => t.description).join(' ') || ''
-          };
-          
-          chatGPTResult = await callBoltAI(visionData);
-        }
-        
-        matches = mapVisionResultsToMatches(visionResponse, analysisId, chatGPTResult || {});
-        
-        console.log(`Google Vision API returned ${matches.length} matches`);
-        console.log('Primary match details:', {
-          itemType: matches[0]?.itemType,
-          manufacturer: matches[0]?.manufacturer,
-          collection: matches[0]?.collection,
-          confidence: matches[0]?.confidence
-        });
-
-        // Step 4: Search web for similar items based on identification
-        if (matches.length > 0) {
-          const searchTerms = generateSearchTermsFromMatches(matches);
-          webSearchResults = await searchWebForSimilarItems(searchTerms, 5);
-        }
-      }
-      
-      // Step 5: Fallback to mock data if no API is configured or all fail
-      if (matches.length === 0) {
-        console.log('No API configured or all APIs failed, using fallback data');
-        matches = generateFallbackMatches(analysisId);
-        // Generate mock web search results for fallback
-        webSearchResults = generateMockEbayResults(['collectible glass'], 5);
-      }
-
-    } catch (apiError: any) {
-      console.error('AI API error:', apiError);
-      
-      // Fallback to mock data on API failure
-      console.log('API failed, using fallback data');
-      matches = generateFallbackMatches(analysisId);
-      webSearchResults = generateMockEbayResults(['collectible glass'], 5);
-    }
-
-    const result: ImageRecognitionResponse = {
-      matches,
-      primaryMatch: matches[0],
-      webSearchResults,
-      analysisId,
-      processedAt: new Date().toISOString(),
-    };
-
-    console.log('Recognition analysis complete:', {
-      analysisId: result.analysisId,
-      matchesCount: result.matches.length,
-      primaryConfidence: result.primaryMatch.confidence,
-      webSearchResultsCount: result.webSearchResults.length,
-      usedGoogleVision: !!visionResponse,
-      usedChatGPT: !!chatGPTResult
-    });
-    console.log('=== IMAGE RECOGNITION REQUEST SUCCESS ===');
-
-    return new Response(
-      JSON.stringify(result),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-
-  } catch (error: any) {
-    console.error('=== IMAGE RECOGNITION REQUEST FAILED ===');
-    console.error('Image recognition error:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: "Failed to process image recognition",
-        details: error.message 
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
-});
-
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Google Vision API error:', response.status, errorText);
-    throw new Error(`Google Vision API error: ${response.status} - ${errorText}`);
-  }
-
-  const result: GoogleVisionResponse = await response.json();
-  console.log('Google Vision API response received');
-  
-  // Check for API-level errors
-  if (result.responses[0]?.error) {
-    throw new Error(`Google Vision API error: ${result.responses[0].error.message}`);
-  }
-  
-  return result;
-}
-
-async function callBoltAI(visionData: any): Promise<any> {
-  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-  
-  if (!openaiApiKey) {
-    console.log('No OpenAI API key configured, skipping AI description generation');
-    return null;
-  }
-
-  try {
-    console.log('Calling ChatGPT for enhanced collectible analysis...');
-    
-    const prompt = `
-Context:
-You are an expert appraiser and identifier of vintage collectible glassware, specializing in Milk Glass, Jadeite, Depression Glass, and Art Glass. You are analyzing Google Vision API data to help collectors properly identify and catalog their items.
-
-Task:
-Analyze the Google Vision API data and provide expert identification:
-
-1. IDENTIFICATION: Determine the most likely manufacturer, pattern, and item type
-2. CATEGORIZATION: Assign proper category (Jadeite, Milk Glass, Depression Glass, Art Glass, etc.) and subcategory (Cup, Bowl, Vase, etc.)
-3. HISTORICAL CONTEXT: Provide era/period and brief historical significance
-4. VALUE ASSESSMENT: Estimate market value based on rarity, condition, and demand
-5. CONFIDENCE: Rate your identification confidence (High/Medium/Low)
-6. DESCRIPTION: Write a collector-friendly description with key identifying features
-
-Key Manufacturers to Look For:
-- Fire-King/Anchor Hocking (Jadeite, 1940s-1970s)
-- Fenton Art Glass (Art Glass, 1905-2011)
-- Westmoreland (Milk Glass, 1889-1985)
-- Federal Glass (Depression Glass, 1900-1979)
-- Hazel-Atlas (Depression Glass, 1902-1956)
-- Indiana Glass (Depression Glass, 1907-2002)
-
-Common Patterns:
-- Hobnail (raised dots)
-- Restaurant Ware (heavy commercial pieces)
-- Swirl patterns
-- Ribbed patterns
-
-Input:
-${JSON.stringify(visionData)}
-
-REQUIRED OUTPUT FORMAT (must be valid JSON):
-{
-  "description": "This appears to be a Fire-King Jadeite restaurant ware cup, likely from the 1940s-1950s. The thick walls and jade green color are characteristic of Anchor Hocking's commercial dinnerware line.",
-  "category": "Jadeite",
-  "subcategory": "Cup",
-  "manufacturer": "Anchor Hocking",
-  "pattern": "Fire-King Restaurant Ware",
-  "era": "1940s-1950s",
-  "material": "Jadeite Glass",
-  "estimatedValue": 25,
-  "confidence": "High",
-  "identifyingFeatures": ["Jade green color", "Thick walls", "Commercial weight", "Fire-King styling"],
-  "historicalContext": "Fire-King jadeite was popular restaurant and home dinnerware, prized for durability and distinctive color."
-}
-
-IMPORTANT: 
-- Always return valid JSON
-- Use "Unknown" for uncertain fields
-- Base estimates on actual collectible market values
-- Consider condition affects value significantly
-- Be specific about identifying features`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a professional antique appraiser and collectible glass expert with 30+ years of experience. You specialize in American glassware from 1900-1980, particularly Fire-King Jadeite, Fenton Art Glass, Milk Glass, and Depression Glass. You provide accurate identifications and fair market valuations for insurance and collection purposes.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 500,
-        temperature: 0.2
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ChatGPT API error:', response.status, errorText);
-      return null;
-    }
-
-    const result = await response.json();
-    const content = result.choices?.[0]?.message?.content;
-    
-    if (content) {
-      try {
-        // Clean the content in case ChatGPT adds markdown formatting
-        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const parsedResult = JSON.parse(cleanContent);
-        console.log('ChatGPT analysis result:', parsedResult);
-        return parsedResult;
-      } catch (parseError) {
-        console.error('Failed to parse ChatGPT response as JSON:', content);
-        console.error('Parse error:', parseError);
-        return null;
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('ChatGPT API call failed:', error);
-    return null;
-  }
-}
-
 function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysisId: string, chatGPTResult?: any): RecognitionMatch[] {
   const response = visionResponse.responses[0];
   const labels = response.labelAnnotations || [];
@@ -966,30 +646,12 @@ function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysi
   return matches;
 }
 
-// Fallback function for when APIs are unavailable
-function generateFallbackMatches(analysisId: string): RecognitionMatch[] {
-  console.log('Generating fallback matches for analysis:', analysisId);
-  
-  const fallbackMatches = [
-    {
-      id: `match_${analysisId}_fallback`,
-      confidence: 0.6,
-      collection: "Collectible Glass",
-      itemType: "Glass Item",
-      material: "Glass",
-      manufacturer: "Unknown",
-      pattern: "Unknown",
-      era: "Mid-20th Century",
-      description: "Unable to connect to AI services. This appears to be a vintage glass collectible. Please add details manually for accurate cataloging.",
-      estimatedValue: 25
-    }
-  ];
-  
-  return fallbackMatches;
-}
-
 Deno.serve(async (req: Request) => {
   try {
+    console.log('=== IMAGE RECOGNITION REQUEST START ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    
     if (req.method === "OPTIONS") {
       return new Response(null, {
         status: 200,
@@ -1007,7 +669,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const requestData: ImageRecognitionRequest = await req.json();
+    let requestData: ImageRecognitionRequest;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request JSON:', parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     if (!requestData.image || !requestData.filename) {
       return new Response(
@@ -1032,18 +706,18 @@ Deno.serve(async (req: Request) => {
     const customModelEndpoint = Deno.env.get('CUSTOM_MODEL_ENDPOINT');
     const customModelApiKey = Deno.env.get('CUSTOM_MODEL_API_KEY');
     const useCustomModel = Deno.env.get('USE_CUSTOM_MODEL') === 'true';
-    const boltAIApiKey = Deno.env.get('BOLT_AI_API_KEY'); // For enhanced descriptions
 
     console.log('API Configuration:', {
       hasGoogleVisionKey: !!googleVisionApiKey,
       hasCustomModelEndpoint: !!customModelEndpoint,
       hasCustomModelKey: !!customModelApiKey,
-      hasBoltAIKey: !!boltAIApiKey,
       useCustomModel
     });
 
     let matches: RecognitionMatch[] = [];
     let visionResponse: GoogleVisionResponse | null = null;
+    let webSearchResults: WebSearchResult[] = [];
+    let chatGPTResult: any = null;
 
     try {
       // Step 1: Try custom model first if configured
@@ -1062,7 +736,6 @@ Deno.serve(async (req: Request) => {
         visionResponse = await callGoogleVisionAPI(requestData.image, googleVisionApiKey);
         
         // Step 3: Enhance with ChatGPT if available
-        let chatGPTResult = null;
         const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
         if (openaiApiKey && visionResponse) {
           const visionData = {
@@ -1075,7 +748,7 @@ Deno.serve(async (req: Request) => {
           chatGPTResult = await callBoltAI(visionData);
         }
         
-        matches = mapVisionResultsToMatches(visionResponse, analysisId, chatGPTResult);
+        matches = mapVisionResultsToMatches(visionResponse, analysisId, chatGPTResult || {});
         
         console.log(`Google Vision API returned ${matches.length} matches`);
         console.log('Primary match details:', {
@@ -1084,12 +757,20 @@ Deno.serve(async (req: Request) => {
           collection: matches[0]?.collection,
           confidence: matches[0]?.confidence
         });
+
+        // Step 4: Search web for similar items based on identification
+        if (matches.length > 0) {
+          const searchTerms = generateSearchTermsFromMatches(matches);
+          webSearchResults = await searchWebForSimilarItems(searchTerms, 5);
+        }
       }
       
-      // Step 4: Fallback to mock data if no API is configured or all fail
+      // Step 5: Fallback to mock data if no API is configured or all fail
       if (matches.length === 0) {
         console.log('No API configured or all APIs failed, using fallback data');
         matches = generateFallbackMatches(analysisId);
+        // Generate mock web search results for fallback
+        webSearchResults = generateMockEbayResults(['collectible glass'], 5);
       }
 
     } catch (apiError: any) {
@@ -1098,11 +779,13 @@ Deno.serve(async (req: Request) => {
       // Fallback to mock data on API failure
       console.log('API failed, using fallback data');
       matches = generateFallbackMatches(analysisId);
+      webSearchResults = generateMockEbayResults(['collectible glass'], 5);
     }
 
     const result: ImageRecognitionResponse = {
       matches,
       primaryMatch: matches[0],
+      webSearchResults,
       analysisId,
       processedAt: new Date().toISOString(),
     };
@@ -1111,9 +794,11 @@ Deno.serve(async (req: Request) => {
       analysisId: result.analysisId,
       matchesCount: result.matches.length,
       primaryConfidence: result.primaryMatch.confidence,
+      webSearchResultsCount: result.webSearchResults.length,
       usedGoogleVision: !!visionResponse,
       usedChatGPT: !!chatGPTResult
     });
+    console.log('=== IMAGE RECOGNITION REQUEST SUCCESS ===');
 
     return new Response(
       JSON.stringify(result),
@@ -1124,6 +809,7 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error: any) {
+    console.error('=== IMAGE RECOGNITION REQUEST FAILED ===');
     console.error('Image recognition error:', error);
     
     return new Response(
