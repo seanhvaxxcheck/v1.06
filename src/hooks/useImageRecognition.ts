@@ -29,6 +29,18 @@ export const useImageRecognition = () => {
     setError(null);
 
     try {
+      // Check for required environment variables
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl) {
+        throw new Error('VITE_SUPABASE_URL environment variable is not configured');
+      }
+      
+      if (!supabaseAnonKey) {
+        throw new Error('VITE_SUPABASE_ANON_KEY environment variable is not configured');
+      }
+
       // Convert image to base64 for API transmission
       const base64Image = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -42,12 +54,12 @@ export const useImageRecognition = () => {
         reader.readAsDataURL(imageFile);
       });
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/image-recognition`;
+      const apiUrl = `${supabaseUrl}/functions/v1/image-recognition`;
       
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
