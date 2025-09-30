@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, CheckCircle, AlertCircle, Unlink, RefreshCw } from 'lucide-react';
+import { ExternalLink, CircleCheck as CheckCircle, CircleAlert as AlertCircle, Unlink, RefreshCw } from 'lucide-react';
 import { useEbayIntegration } from '../../hooks/useEbayIntegration';
 import { useAuth } from '../../contexts/AuthContext';
 

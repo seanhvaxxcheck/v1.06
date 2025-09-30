@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, MapPin, Info, DollarSign, Award, Clock, Heart, TrendingUp, Edit, Trash2, RotateCcw, Loader2, ExternalLink } from 'lucide-react';
+import { X, Calendar, MapPin, Info, DollarSign, Award, Clock, Heart, TrendingUp, CreditCard as Edit, Trash2, RotateCcw, Loader as Loader2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { OptimizedImage } from './OptimizedImage';
 import { EbayListingModal } from '../ebay/EbayListingModal';
