@@ -114,7 +114,6 @@ React.useEffect(() => {
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'subscription', name: 'My Plan', icon: CreditCard },
     { id: 'categories', name: 'My Categories', icon: FileText },
-    { id: 'ebay-integration', name: 'eBay Integration', icon: Share },
     { id: 'share-collection', name: 'Share Collection', icon: Share },
     //{ id: 'notifications', name: 'Notifications', icon: Bell },
     //{ id: 'privacy', name: 'Privacy & Security', icon: Shield },
@@ -757,9 +756,7 @@ React.useEffect(() => {
                 </div>
               )}
 
-              {activeTab === 'ebay-integration' && (
-                <EbayIntegrationSettings />
-              )}
+              {activeTab === 'ebay-integration' && <EbayIntegrationSettings />}
 
               {activeTab === 'share-collection' && (
                 <ShareCollectionManager />
