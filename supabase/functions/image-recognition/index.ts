@@ -58,35 +58,36 @@ interface GoogleVisionResponse {
   }];
 }
 
-// Collectible knowledge base for mapping Vision API results
+// Enhanced collectible knowledge base
 const COLLECTIBLE_PATTERNS = {
   manufacturers: {
-    'fenton': { name: 'Fenton Art Glass', era: '1905-2011', specialty: 'Art Glass' },
-    'anchor hocking': { name: 'Anchor Hocking', era: '1905-present', specialty: 'Fire-King Jadeite' },
-    'fire-king': { name: 'Anchor Hocking', era: '1942-1976', specialty: 'Fire-King Jadeite' },
-    'federal glass': { name: 'Federal Glass Company', era: '1900-1979', specialty: 'Depression Glass' },
-    'pyrex': { name: 'Corning Glass Works', era: '1915-present', specialty: 'Kitchen Glass' },
-    'corning': { name: 'Corning Glass Works', era: '1851-present', specialty: 'Kitchen & Laboratory Glass' },
-    'westmoreland': { name: 'Westmoreland Glass Company', era: '1889-1985', specialty: 'Milk Glass' },
-    'indiana glass': { name: 'Indiana Glass Company', era: '1907-2002', specialty: 'Depression Glass' },
+    'fenton': { name: 'Fenton Art Glass', era: '1905-2011', specialty: 'Art Glass', keywords: ['fenton'] },
+    'anchor hocking': { name: 'Anchor Hocking', era: '1905-present', specialty: 'Fire-King Jadeite', keywords: ['anchor hocking', 'fire-king', 'fireking'] },
+    'fire-king': { name: 'Anchor Hocking Fire-King', era: '1942-1976', specialty: 'Jadeite Dinnerware', keywords: ['fire-king', 'fireking', 'fire king'] },
+    'federal glass': { name: 'Federal Glass Company', era: '1900-1979', specialty: 'Depression Glass', keywords: ['federal', 'federal glass'] },
+    'pyrex': { name: 'Corning Pyrex', era: '1915-present', specialty: 'Kitchen Glass', keywords: ['pyrex', 'corning'] },
+    'westmoreland': { name: 'Westmoreland Glass', era: '1889-1985', specialty: 'Milk Glass', keywords: ['westmoreland'] },
+    'indiana glass': { name: 'Indiana Glass Company', era: '1907-2002', specialty: 'Depression Glass', keywords: ['indiana glass'] },
+    'hazel atlas': { name: 'Hazel-Atlas Glass Company', era: '1902-1956', specialty: 'Depression Glass', keywords: ['hazel atlas', 'hazel-atlas'] },
   },
   
   patterns: {
-    'hobnail': { description: 'Raised dot pattern resembling boot nails', era: '1940s-1980s' },
-    'jadeite': { description: 'Jade green opaque glass', era: '1930s-1970s' },
-    'milk glass': { description: 'Opaque white or colored glass', era: '1800s-1980s' },
-    'depression glass': { description: 'Mass-produced glassware from 1929-1939', era: '1929-1939' },
-    'restaurant ware': { description: 'Heavy-duty dinnerware for commercial use', era: '1940s-1970s' },
+    'hobnail': { description: 'Raised dot pattern resembling boot nails', era: '1940s-1980s', keywords: ['hobnail', 'dot', 'bubble'] },
+    'jadeite': { description: 'Jade green opaque glass dinnerware', era: '1930s-1970s', keywords: ['jadeite', 'jade', 'green glass'] },
+    'milk glass': { description: 'Opaque white or colored glass', era: '1800s-1980s', keywords: ['milk glass', 'white glass', 'opaque'] },
+    'depression glass': { description: 'Mass-produced colored glassware', era: '1929-1939', keywords: ['depression', 'colored glass'] },
+    'restaurant ware': { description: 'Heavy-duty commercial dinnerware', era: '1940s-1970s', keywords: ['restaurant', 'heavy', 'commercial'] },
   },
   
   itemTypes: {
-    'cup': ['coffee cup', 'tea cup', 'mug', 'cup'],
-    'bowl': ['mixing bowl', 'serving bowl', 'cereal bowl', 'soup bowl'],
-    'plate': ['dinner plate', 'salad plate', 'dessert plate', 'serving plate'],
-    'vase': ['flower vase', 'bud vase', 'decorative vase'],
-    'dish': ['candy dish', 'serving dish', 'butter dish', 'covered dish'],
-    'pitcher': ['water pitcher', 'milk pitcher', 'cream pitcher'],
-    'jar': ['cookie jar', 'canister', 'storage jar'],
+    'cup': { keywords: ['cup', 'mug', 'coffee cup', 'tea cup'], category: 'Dinnerware' },
+    'bowl': { keywords: ['bowl', 'mixing bowl', 'serving bowl', 'cereal bowl'], category: 'Dinnerware' },
+    'plate': { keywords: ['plate', 'dinner plate', 'salad plate', 'dish'], category: 'Dinnerware' },
+    'vase': { keywords: ['vase', 'flower vase', 'bud vase'], category: 'Decorative' },
+    'pitcher': { keywords: ['pitcher', 'jug', 'water pitcher', 'milk pitcher'], category: 'Serving' },
+    'jar': { keywords: ['jar', 'cookie jar', 'canister', 'storage'], category: 'Storage' },
+    'saucer': { keywords: ['saucer', 'small plate'], category: 'Dinnerware' },
+    'platter': { keywords: ['platter', 'serving tray', 'large plate'], category: 'Serving' },
   }
 };
 
@@ -188,8 +189,8 @@ function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysi
   let itemType = 'Unknown Item';
   let confidence = 0.5;
   
-  for (const [type, keywords] of Object.entries(COLLECTIBLE_PATTERNS.itemTypes)) {
-    for (const keyword of keywords) {
+  for (const [type, info] of Object.entries(COLLECTIBLE_PATTERNS.itemTypes)) {
+    for (const keyword of info.keywords) {
       const matchingLabel = labels.find(label => 
         label.description.toLowerCase().includes(keyword.toLowerCase())
       );
@@ -213,7 +214,7 @@ function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysi
     const entityDesc = entity.description.toLowerCase();
     
     for (const [key, info] of Object.entries(COLLECTIBLE_PATTERNS.manufacturers)) {
-      if (entityDesc.includes(key)) {
+      if (info.keywords.some(keyword => entityDesc.includes(keyword))) {
         manufacturer = info.name;
         era = info.era;
         if (key === 'fenton') {
@@ -302,6 +303,28 @@ function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysi
   return matches;
 }
 
+// Fallback function for when APIs are unavailable
+function generateFallbackMatches(analysisId: string): RecognitionMatch[] {
+  console.log('Generating fallback matches for analysis:', analysisId);
+  
+  const fallbackMatches = [
+    {
+      id: `match_${analysisId}_fallback`,
+      confidence: 0.6,
+      collection: "Collectible Glass",
+      itemType: "Glass Item",
+      material: "Glass",
+      manufacturer: "Unknown",
+      pattern: "Unknown",
+      era: "Mid-20th Century",
+      description: "Unable to identify specific details. This appears to be a vintage glass collectible. Please add details manually for accurate cataloging.",
+      estimatedValue: 25
+    }
+  ];
+  
+  return fallbackMatches;
+}
+
 Deno.serve(async (req: Request) => {
   try {
     if (req.method === "OPTIONS") {
@@ -347,6 +370,13 @@ Deno.serve(async (req: Request) => {
     const customModelApiKey = Deno.env.get('CUSTOM_MODEL_API_KEY');
     const useCustomModel = Deno.env.get('USE_CUSTOM_MODEL') === 'true';
 
+    console.log('API Configuration:', {
+      hasGoogleVisionKey: !!googleVisionApiKey,
+      hasCustomModelEndpoint: !!customModelEndpoint,
+      hasCustomModelKey: !!customModelApiKey,
+      useCustomModel
+    });
+
     let matches: RecognitionMatch[] = [];
 
     try {
@@ -373,6 +403,12 @@ Deno.serve(async (req: Request) => {
         matches = mapVisionResultsToMatches(visionResponse, analysisId);
         
         console.log(`Google Vision API returned ${matches.length} matches`);
+        console.log('Primary match details:', {
+          itemType: matches[0]?.itemType,
+          manufacturer: matches[0]?.manufacturer,
+          collection: matches[0]?.collection,
+          confidence: matches[0]?.confidence
+        });
       }
       
       // Fallback to mock data if no API is configured or all fail
@@ -425,25 +461,3 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
-
-// Fallback function for when APIs are unavailable
-function generateFallbackMatches(analysisId: string): RecognitionMatch[] {
-  console.log('Generating fallback matches for analysis:', analysisId);
-  
-  const fallbackMatches = [
-    {
-      id: `match_${analysisId}_fallback`,
-      confidence: 0.6,
-      collection: "Collectible Glass",
-      itemType: "Glass Item",
-      material: "Glass",
-      manufacturer: "Unknown",
-      pattern: "Unknown",
-      era: "Mid-20th Century",
-      description: "Unable to identify specific details. This appears to be a vintage glass collectible. Please add details manually for accurate cataloging.",
-      estimatedValue: 25
-    }
-  ];
-  
-  return fallbackMatches;
-}
