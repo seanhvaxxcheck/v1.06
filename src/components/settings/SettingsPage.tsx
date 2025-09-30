@@ -26,6 +26,7 @@ import {
 } from '../../utils/customFields';
 import { UpgradeModal } from '../subscription/UpgradeModal';
 import { ShareCollectionManager } from './ShareCollectionManager';
+import { EbayIntegrationSettings } from './EbayIntegrationSettings';
 
 interface SettingsPageProps {
   onPageChange?: (page: string) => void;

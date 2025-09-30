@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Calendar, MapPin, Info, DollarSign, Award, Clock, Heart, TrendingUp, Edit, Trash2, RotateCcw, Loader2 } from 'lucide-react';
+import { X, Calendar, MapPin, Info, DollarSign, Award, Clock, Heart, TrendingUp, Edit, Trash2, RotateCcw, Loader2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { OptimizedImage } from './OptimizedImage';
+import { EbayListingModal } from '../ebay/EbayListingModal';
 import type { InventoryItem } from '../../hooks/useInventory';
 
 interface ItemFactsModalProps {
@@ -37,6 +38,7 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
 }) => {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [localFavoriteStatus, setLocalFavoriteStatus] = React.useState(item.favorites || 0);
+  const [ebayModalOpen, setEbayModalOpen] = React.useState(false);
 
   const handleLocalToggleFavorite = async () => {
     if (!handleToggleFavorite || isProcessing) return;
@@ -288,6 +290,15 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
                 </button>
               )}
 
+              {/* eBay Listing Button */}
+              <button
+                onClick={() => setEbayModalOpen(true)}
+                disabled={isProcessing}
+                className="flex flex-col items-center p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-xl transition-colors disabled:opacity-50"
+              >
+                <ExternalLink className="h-5 w-5 mb-2" />
+                <span className="text-sm font-medium">List on eBay</span>
+              </button>
               {/* Edit Button */}
               {handleEdit && (
                 <button
@@ -505,6 +516,18 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* eBay Listing Modal */}
+      <EbayListingModal
+        item={item}
+        isOpen={ebayModalOpen}
+        onClose={() => setEbayModalOpen(false)}
+        onListingCreated={(listingUrl) => {
+          setEbayModalOpen(false);
+          // You could show a success toast here
+          console.log('eBay listing created:', listingUrl);
+        }}
+      />
     </div>
   );
 };
