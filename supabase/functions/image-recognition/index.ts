@@ -168,65 +168,95 @@ async function callGoogleVisionAPI(base64Image: string, apiKey: string): Promise
 }
 
 async function callBoltAI(visionData: any): Promise<any> {
-  const boltApiKey = Deno.env.get('BOLT_AI_API_KEY');
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
   
-  if (!boltApiKey) {
-    console.log('No Bolt AI API key configured, skipping AI description generation');
+  if (!openaiApiKey) {
+    console.log('No OpenAI API key configured, skipping AI description generation');
     return null;
   }
 
   try {
-    console.log('Calling Bolt AI for enhanced description...');
+    console.log('Calling ChatGPT for enhanced collectible analysis...');
     
     const prompt = `
 Context:
-You are assisting MyGlassCase, a collectible inventory app. Users upload a photo of an item, which is sent to the Google Vision API. The API returns labels, web entities, and a best guess label.
+You are an expert appraiser and identifier of vintage collectible glassware, specializing in Milk Glass, Jadeite, Depression Glass, and Art Glass. You are analyzing Google Vision API data to help collectors properly identify and catalog their items.
 
 Task:
-Take the Google Vision API output and:
-- Write a short, friendly description suitable for a collector inventory app.
-- Suggest a Category (main type, e.g., "Jadeite") and Subcategory (specific item, e.g., "Cup").
-- Include confidence notes if relevant (e.g., "likely" or "possible match").
-- Keep it concise and user-friendly; assume this will be shown to the user to confirm or edit.
+Analyze the Google Vision API data and provide expert identification:
+
+1. IDENTIFICATION: Determine the most likely manufacturer, pattern, and item type
+2. CATEGORIZATION: Assign proper category (Jadeite, Milk Glass, Depression Glass, Art Glass, etc.) and subcategory (Cup, Bowl, Vase, etc.)
+3. HISTORICAL CONTEXT: Provide era/period and brief historical significance
+4. VALUE ASSESSMENT: Estimate market value based on rarity, condition, and demand
+5. CONFIDENCE: Rate your identification confidence (High/Medium/Low)
+6. DESCRIPTION: Write a collector-friendly description with key identifying features
+
+Key Manufacturers to Look For:
+- Fire-King/Anchor Hocking (Jadeite, 1940s-1970s)
+- Fenton Art Glass (Art Glass, 1905-2011)
+- Westmoreland (Milk Glass, 1889-1985)
+- Federal Glass (Depression Glass, 1900-1979)
+- Hazel-Atlas (Depression Glass, 1902-1956)
+- Indiana Glass (Depression Glass, 1907-2002)
+
+Common Patterns:
+- Hobnail (raised dots)
+- Restaurant Ware (heavy commercial pieces)
+- Swirl patterns
+- Ribbed patterns
 
 Input:
 ${JSON.stringify(visionData)}
 
-Output JSON format:
+REQUIRED OUTPUT FORMAT (must be valid JSON):
 {
-  "description": "This appears to be a Fire-King Jadeite cup, a classic vintage collectible glassware piece.",
+  "description": "This appears to be a Fire-King Jadeite restaurant ware cup, likely from the 1940s-1950s. The thick walls and jade green color are characteristic of Anchor Hocking's commercial dinnerware line.",
   "category": "Jadeite",
-  "subcategory": "Cup", 
-  "confidence": "High"
+  "subcategory": "Cup",
+  "manufacturer": "Anchor Hocking",
+  "pattern": "Fire-King Restaurant Ware",
+  "era": "1940s-1950s",
+  "material": "Jadeite Glass",
+  "estimatedValue": 25,
+  "confidence": "High",
+  "identifyingFeatures": ["Jade green color", "Thick walls", "Commercial weight", "Fire-King styling"],
+  "historicalContext": "Fire-King jadeite was popular restaurant and home dinnerware, prized for durability and distinctive color."
 }
 
-Generate similar structured output for the provided API response.`;
+IMPORTANT: 
+- Always return valid JSON
+- Use "Unknown" for uncertain fields
+- Base estimates on actual collectible market values
+- Consider condition affects value significantly
+- Be specific about identifying features`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${boltApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert in vintage collectible glassware, particularly Jadeite, Milk Glass, and Depression Glass. Provide accurate, collector-focused descriptions.'
+            content: 'You are a professional antique appraiser and collectible glass expert with 30+ years of experience. You specialize in American glassware from 1900-1980, particularly Fire-King Jadeite, Fenton Art Glass, Milk Glass, and Depression Glass. You provide accurate identifications and fair market valuations for insurance and collection purposes.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 300,
-        temperature: 0.3
+        max_tokens: 500,
+        temperature: 0.2
       }),
     });
 
     if (!response.ok) {
-      console.error('Bolt AI API error:', response.status);
+      const errorText = await response.text();
+      console.error('ChatGPT API error:', response.status, errorText);
       return null;
     }
 
@@ -235,21 +265,26 @@ Generate similar structured output for the provided API response.`;
     
     if (content) {
       try {
-        return JSON.parse(content);
+        // Clean the content in case ChatGPT adds markdown formatting
+        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const parsedResult = JSON.parse(cleanContent);
+        console.log('ChatGPT analysis result:', parsedResult);
+        return parsedResult;
       } catch (parseError) {
-        console.error('Failed to parse Bolt AI response as JSON:', content);
+        console.error('Failed to parse ChatGPT response as JSON:', content);
+        console.error('Parse error:', parseError);
         return null;
       }
     }
     
     return null;
   } catch (error) {
-    console.error('Bolt AI call failed:', error);
+    console.error('ChatGPT API call failed:', error);
     return null;
   }
 }
 
-function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysisId: string, boltAIResult?: any): RecognitionMatch[] {
+function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysisId: string, chatGPTResult?: any): RecognitionMatch[] {
   const response = visionResponse.responses[0];
   const labels = response.labelAnnotations || [];
   const webEntities = response.webDetection?.webEntities || [];
@@ -351,21 +386,38 @@ function mapVisionResultsToMatches(visionResponse: GoogleVisionResponse, analysi
     }
   }
 
-  // 3. Use Bolt AI result if available to enhance description
+  // 3. Use ChatGPT result if available to enhance description
   let description = '';
-  if (boltAIResult?.description) {
-    description = boltAIResult.description;
-    // Override with Bolt AI suggestions if they seem more accurate
-    if (boltAIResult.category && boltAIResult.category !== 'Unknown') {
-      collection = boltAIResult.category;
+  if (chatGPTResult?.description) {
+    description = chatGPTResult.description;
+    
+    // Override with ChatGPT suggestions if they seem more accurate
+    if (chatGPTResult.category && chatGPTResult.category !== 'Unknown') {
+      collection = chatGPTResult.category;
     }
-    if (boltAIResult.subcategory && boltAIResult.subcategory !== 'Unknown') {
-      itemType = boltAIResult.subcategory;
+    if (chatGPTResult.subcategory && chatGPTResult.subcategory !== 'Unknown') {
+      itemType = chatGPTResult.subcategory;
     }
-    if (boltAIResult.confidence) {
-      const boltConfidence = boltAIResult.confidence.toLowerCase();
-      if (boltConfidence === 'high') confidence = Math.max(confidence, 0.8);
-      else if (boltConfidence === 'medium') confidence = Math.max(confidence, 0.6);
+    if (chatGPTResult.manufacturer && chatGPTResult.manufacturer !== 'Unknown') {
+      manufacturer = chatGPTResult.manufacturer;
+    }
+    if (chatGPTResult.pattern && chatGPTResult.pattern !== 'Unknown') {
+      pattern = chatGPTResult.pattern;
+    }
+    if (chatGPTResult.era && chatGPTResult.era !== 'Unknown') {
+      era = chatGPTResult.era;
+    }
+    if (chatGPTResult.material && chatGPTResult.material !== 'Unknown') {
+      material = chatGPTResult.material;
+    }
+    if (chatGPTResult.estimatedValue && typeof chatGPTResult.estimatedValue === 'number') {
+      estimatedValue = chatGPTResult.estimatedValue;
+    }
+    if (chatGPTResult.confidence) {
+      const chatGPTConfidence = chatGPTResult.confidence.toLowerCase();
+      if (chatGPTConfidence === 'high') confidence = Math.max(confidence, 0.85);
+      else if (chatGPTConfidence === 'medium') confidence = Math.max(confidence, 0.65);
+      else if (chatGPTConfidence === 'low') confidence = Math.max(confidence, 0.45);
     }
   } else {
     // Generate description from our analysis
@@ -513,9 +565,10 @@ Deno.serve(async (req: Request) => {
         
         visionResponse = await callGoogleVisionAPI(requestData.image, googleVisionApiKey);
         
-        // Step 3: Enhance with Bolt AI if available
-        let boltAIResult = null;
-        if (boltAIApiKey && visionResponse) {
+        // Step 3: Enhance with ChatGPT if available
+        let chatGPTResult = null;
+        const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+        if (openaiApiKey && visionResponse) {
           const visionData = {
             labels: visionResponse.responses[0].labelAnnotations?.map(l => l.description) || [],
             webEntities: visionResponse.responses[0].webDetection?.webEntities?.map(w => w.description) || [],
@@ -523,10 +576,10 @@ Deno.serve(async (req: Request) => {
             ocrText: visionResponse.responses[0].textAnnotations?.map(t => t.description).join(' ') || ''
           };
           
-          boltAIResult = await callBoltAI(visionData);
+          chatGPTResult = await callBoltAI(visionData);
         }
         
-        matches = mapVisionResultsToMatches(visionResponse, analysisId, boltAIResult);
+        matches = mapVisionResultsToMatches(visionResponse, analysisId, chatGPTResult);
         
         console.log(`Google Vision API returned ${matches.length} matches`);
         console.log('Primary match details:', {
@@ -563,7 +616,7 @@ Deno.serve(async (req: Request) => {
       matchesCount: result.matches.length,
       primaryConfidence: result.primaryMatch.confidence,
       usedGoogleVision: !!visionResponse,
-      usedBoltAI: !!boltAIApiKey
+      usedChatGPT: !!chatGPTResult
     });
 
     return new Response(
