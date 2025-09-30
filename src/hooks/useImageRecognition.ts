@@ -134,37 +134,4 @@ export const useImageRecognition = () => {
     loading,
     error,
   };
-};</parameter>
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: base64Image,
-          filename: imageFile.name,
-          fileType: imageFile.type,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to analyze image');
-      }
-
-      const result = await response.json();
-      return result;
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return {
-    analyzeImage,
-    loading,
-    error,
-  };
 };
