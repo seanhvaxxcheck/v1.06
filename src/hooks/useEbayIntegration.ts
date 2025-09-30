@@ -68,9 +68,88 @@ export const useEbayIntegration = () => {
     setError(null);
 
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-auth`;
+      // Check for required environment variables
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      const response = await fetch(apiUrl, {
+      if (!supabaseUrl) {
+        throw new Error('Supabase URL not configured');
+      }
+      
+      if (!supabaseAnonKey) {
+        throw new Error('Supabase authentication not configured');
+      }
+
+      console.log('=== EBAY CONNECT DEBUG ===');
+      console.log('User ID:', user.id);
+      console.log('Supabase URL:', supabaseUrl);
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-auth`;
+      console.log('API URL:', apiUrl);
+      
+      console.log('Making eBay auth request...');
+      const response = await Promise.race([
+        fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'get_auth_url',
+            user_id: user.id,
+          }),
+        }),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+        )
+      ]);
+
+      console.log('Response received:', response.status, response.statusText);
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error('eBay auth API error:', errorData);
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          const errorText = await response.text();
+          console.error('Raw error response:', errorText);
+        }
+        throw new Error(errorMessage);
+      }
+
+      console.log('Parsing response...');
+      const data = await response.json();
+      console.log('eBay auth response:', data);
+      console.log('=== EBAY CONNECT SUCCESS ===');
+      
+      return { authUrl: data.auth_url };
+
+    } catch (err: any) {
+      console.error('=== EBAY CONNECT ERROR ===');
+      console.error('Error type:', err.constructor.name);
+      console.error('Error message:', err.message);
+      console.error('Full error:', err);
+      
+      let userFriendlyMessage = err.message;
+      
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        userFriendlyMessage = 'Unable to connect to eBay service. This feature may not be fully configured yet. Please try again later or contact support.';
+      } else if (err.message.includes('timeout')) {
+        userFriendlyMessage = 'Connection to eBay is taking too long. Please check your internet connection and try again.';
+      } else if (err.message.includes('not configured')) {
+        userFriendlyMessage = 'eBay integration is not fully configured. Please contact support to enable this feature.';
+      }
+      
+      setError(userFriendlyMessage);
+      return { error: userFriendlyMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);</parameter>
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
