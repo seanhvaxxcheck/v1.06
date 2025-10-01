@@ -159,19 +159,6 @@ export const EbayIntegrationSettings: React.FC = () => {
         </div>
 
         {/* Development Notice */}
-        <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <div className="flex items-center">
-            <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mr-2" />
-            <div>
-              <p className="text-yellow-800 dark:text-yellow-200 font-medium text-sm">
-                eBay Integration Setup Required
-              </p>
-              <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
-                This feature requires eBay API credentials to be configured. Contact support to enable eBay listing functionality.
-              </p>
-            </div>
-          </div>
-        </div>
         {isConnected && (
           <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <h5 className="font-medium text-green-800 dark:text-green-200 mb-2">

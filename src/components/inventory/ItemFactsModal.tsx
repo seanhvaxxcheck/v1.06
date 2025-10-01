@@ -292,16 +292,12 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
 
               {/* eBay Listing Button */}
               <button
-                onClick={() => {
-                  // Show info about eBay integration setup
-                  alert('eBay integration is available but requires API credentials to be configured. Contact support to enable this feature for your account.');
-                }}
+                onClick={() => setEbayModalOpen(true)}
                 disabled={isProcessing}
-                className="flex flex-col items-center p-4 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-xl transition-colors disabled:opacity-50 opacity-60"
+                className="flex flex-col items-center p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-colors disabled:opacity-50"
               >
                 <ExternalLink className="h-5 w-5 mb-2" />
                 <span className="text-sm font-medium">List on eBay</span>
-                <span className="text-xs text-orange-500 dark:text-orange-400 mt-1">Setup Required</span>
               </button>
               {/* Edit Button */}
               {handleEdit && (
