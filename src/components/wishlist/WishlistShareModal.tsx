@@ -299,39 +299,3 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
     </div>
   );
 };
-                <button
-                  onClick={copyToClipboard}
-                  className="flex-1 flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  {copied ? 'Copied!' : 'Copy Link'}
-                </button>
-                
-                {navigator.share && (
-                  <button
-                    onClick={handleShare}
-                    className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                  >
-                    <Share className="h-4 w-4 mr-2" />
-                    Share
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Info */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-start">
-              <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" />
-              <div className="text-sm text-blue-700 dark:text-blue-300">
-                <p className="font-medium mb-1">Share with collectors</p>
-                <p>Other collectors can view this wishlist item and help you find it. They'll see the search terms and price range you've set.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
