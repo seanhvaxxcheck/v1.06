@@ -95,9 +95,9 @@ async function createEbayListing(
       <CategoryID>${listingData.category_id}</CategoryID>
     </PrimaryCategory>
     <StartPrice>${listingData.start_price}</StartPrice>
-    ${listingData.buy_it_now_price ? `<BuyItNowPrice>${listingData.buy_it_now_price}</BuyItNowPrice>` : ''}
     <ListingDuration>Days_${listingData.duration}</ListingDuration>
-    <ListingType>${listingData.buy_it_now_price ? 'FixedPriceItem' : 'Chinese'}</ListingType>
+    <ListingType>FixedPriceItem</ListingType>
+    ${listingData.buy_it_now_price ? `<BuyItNowPrice>${listingData.buy_it_now_price}</BuyItNowPrice>` : ''}
     <ConditionID>${getEbayConditionId(listingData.condition)}</ConditionID>
     <Country>US</Country>
     <Currency>USD</Currency>
