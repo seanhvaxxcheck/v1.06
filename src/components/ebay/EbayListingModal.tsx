@@ -41,6 +41,7 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
   });
   const [step, setStep] = useState<'connect' | 'configure' | 'listing' | 'success'>('connect');
   const [listingResult, setListingResult] = useState<any>(null);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,6 +69,7 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
   };
 
   const handleConnectEbay = async () => {
+    setPopupBlocked(false);
     const { authUrl, error } = await connectToEbay();
     
     if (authUrl) {
@@ -87,7 +89,8 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
       const authWindow = window.open(authUrl, 'ebay-auth', 'width=600,height=700');
       
       if (!authWindow) {
-        console.error('Failed to open auth window - popup may be blocked');
+        console.error('Popup blocked! Please allow popups for this site.');
+        setPopupBlocked(true);
         return;
       }
       
@@ -236,6 +239,25 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
           {/* Connect Step */}
           {step === 'connect' && (
             <div className="text-center space-y-6">
+              {popupBlocked && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+                    <div className="text-left">
+                      <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                        Popup Blocked
+                      </h4>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        Your browser blocked the eBay authentication popup. Please allow popups for this site and try again.
+                      </p>
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+                        Look for a popup blocker icon in your browser's address bar and click "Always allow popups from this site"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto">
                 <ExternalLink className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
