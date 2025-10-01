@@ -7,17 +7,76 @@ const corsHeaders = {
 };
 
 interface EbayAuthRequest {
-  action: 'get_auth_url' | 'handle_callback';
+  action: 'get_auth_url' | 'handle_callback' | 'refresh_token';
   user_id?: string;
   code?: string;
   state?: string;
+}
+
+// Helper: Refresh eBay token
+async function refreshEbayToken(userId: string, supabase: any, ebayClientId: string, ebayClientSecret: string) {
+  console.log('[REFRESH] Getting credentials for user:', userId);
+  
+  const { data: creds, error: fetchError } = await supabase
+    .from('ebay_credentials')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError || !creds) {
+    throw new Error('No eBay credentials found');
+  }
+
+  // Check if token needs refresh (expires in less than 5 minutes)
+  const expiresAt = new Date(creds.expires_at);
+  const now = new Date();
+  const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / 1000 / 60;
+
+  if (minutesUntilExpiry > 5) {
+    console.log('[REFRESH] Token still valid for', Math.round(minutesUntilExpiry), 'minutes');
+    return { access_token: creds.access_token, refreshed: false };
+  }
+
+  console.log('[REFRESH] Token expiring soon, refreshing...');
+
+  const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${btoa(`${ebayClientId}:${ebayClientSecret}`)}`,
+    },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: creds.refresh_token,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error(`Token refresh failed: ${tokenResponse.status}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  const newExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
+
+  // Update database
+  await supabase
+    .from('ebay_credentials')
+    .update({
+      access_token: tokenData.access_token,
+      expires_at: newExpiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId);
+
+  console.log('[REFRESH] Token refreshed successfully');
+  return { access_token: tokenData.access_token, refreshed: true };
 }
 
 Deno.serve(async (req: Request) => {
   try {
     if (req.method === "OPTIONS") {
       return new Response(null, {
-        status: 200,
+        status: 204,
         headers: corsHeaders,
       });
     }
@@ -32,13 +91,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get eBay API credentials from environment
     const ebayClientId = Deno.env.get('EBAY_CLIENT_ID');
     const ebayClientSecret = Deno.env.get('EBAY_CLIENT_SECRET');
     const ebayRedirectUri = Deno.env.get('EBAY_REDIRECT_URI');
@@ -46,40 +102,25 @@ Deno.serve(async (req: Request) => {
     if (!ebayClientId || !ebayClientSecret || !ebayRedirectUri) {
       return new Response(
         JSON.stringify({ error: "eBay API credentials not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const requestData: EbayAuthRequest = await req.json();
 
+    // GENERATE AUTH URL
     if (requestData.action === 'get_auth_url') {
-      // Generate eBay OAuth2 URL with proper scopes
-      const state = `user_${requestData.user_id}_${Date.now()}`;
+      // Crypto-secure random state
+      const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+      const randomHex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      const state = `${requestData.user_id}_${randomHex}`;
       
+      // Minimal required scopes for listing items
       const scopes = [
-        'https://api.ebay.com/oauth/api_scope',
-        'https://api.ebay.com/oauth/api_scope/sell.marketing.readonly',
-        'https://api.ebay.com/oauth/api_scope/sell.marketing',
-        'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
         'https://api.ebay.com/oauth/api_scope/sell.inventory',
-        'https://api.ebay.com/oauth/api_scope/sell.account.readonly',
-        'https://api.ebay.com/oauth/api_scope/sell.account',
-        'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
         'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
-        'https://api.ebay.com/oauth/api_scope/sell.analytics.readonly',
-        'https://api.ebay.com/oauth/api_scope/sell.finances',
-        'https://api.ebay.com/oauth/api_scope/sell.payment.dispute',
-        'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly',
-        'https://api.ebay.com/oauth/api_scope/sell.reputation',
-        'https://api.ebay.com/oauth/api_scope/sell.reputation.readonly',
-        'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription',
-        'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription.readonly',
-        'https://api.ebay.com/oauth/api_scope/sell.stores',
-        'https://api.ebay.com/oauth/api_scope/sell.stores.readonly',
-        'https://api.ebay.com/oauth/scope/sell.edelivery'
+        'https://api.ebay.com/oauth/api_scope/sell.account.readonly'
       ];
 
       const authUrl = `https://auth.ebay.com/oauth2/authorize?` +
@@ -89,46 +130,38 @@ Deno.serve(async (req: Request) => {
         `scope=${encodeURIComponent(scopes.join(' '))}&` +
         `state=${encodeURIComponent(state)}`;
 
-      console.log('Generated eBay OAuth URL:', authUrl);
+      console.log('[AUTH] Generated OAuth URL for user:', requestData.user_id);
 
       return new Response(
-        JSON.stringify({ auth_url: authUrl }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ auth_url: authUrl, state }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // HANDLE OAUTH CALLBACK
     if (requestData.action === 'handle_callback') {
-      // Handle eBay OAuth2 callback
       const { code, state } = requestData;
       
       if (!code || !state) {
         return new Response(
-          JSON.stringify({ error: "Missing authorization code or state" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "Missing code or state" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Extract user ID from state
-      const stateMatch = state.match(/^user_(.+)_\d+$/);
-      const userId = stateMatch ? stateMatch[1] : null;
+      // Extract user ID from state (format: userId_randomHex)
+      const userId = state.split('_')[0];
       
       if (!userId) {
         return new Response(
           JSON.stringify({ error: "Invalid state parameter" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      // Exchange authorization code for access token
+      console.log('[CALLBACK] Exchanging code for token, user:', userId);
+
+      // Exchange code for token
       const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
         method: 'POST',
         headers: {
@@ -143,23 +176,18 @@ Deno.serve(async (req: Request) => {
       });
 
       if (!tokenResponse.ok) {
-        const errorData = await tokenResponse.text();
-        console.error('eBay token exchange failed:', errorData);
+        const errorText = await tokenResponse.text();
+        console.error('[CALLBACK] Token exchange failed:', errorText);
         return new Response(
-          JSON.stringify({ error: "Failed to exchange authorization code for token" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "Failed to get eBay token", details: errorText }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       const tokenData = await tokenResponse.json();
-      
-      // Calculate expiration time
       const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
 
-      // Store credentials in database
+      // Store in database
       const { error: dbError } = await supabase
         .from('ebay_credentials')
         .upsert({
@@ -174,51 +202,65 @@ Deno.serve(async (req: Request) => {
         });
 
       if (dbError) {
-        console.error('Error storing eBay credentials:', dbError);
+        console.error('[CALLBACK] DB error:', dbError);
         return new Response(
-          JSON.stringify({ error: "Failed to store eBay credentials" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: "Failed to store credentials", details: dbError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      console.log('Successfully stored eBay credentials for user:', userId);
+      console.log('[CALLBACK] Successfully stored credentials for user:', userId);
 
       return new Response(
         JSON.stringify({ 
           success: true,
           expires_at: expiresAt.toISOString(),
-          message: "eBay account connected successfully"
+          message: "eBay connected successfully"
         }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // REFRESH TOKEN
+    if (requestData.action === 'refresh_token') {
+      if (!requestData.user_id) {
+        return new Response(
+          JSON.stringify({ error: "user_id required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await refreshEbayToken(
+        requestData.user_id, 
+        supabase, 
+        ebayClientId, 
+        ebayClientSecret
+      );
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          refreshed: result.refreshed,
+          message: result.refreshed ? "Token refreshed" : "Token still valid"
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
-      {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: any) {
-    console.error('eBay auth error:', error);
+    console.error('[ERROR]', error.message);
     
     return new Response(
       JSON.stringify({ 
-        error: "Failed to process eBay authentication",
+        error: "eBay authentication failed",
         details: error.message 
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
