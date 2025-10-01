@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, Upload, Image as ImageIcon, Plus } from 'lucide-react';
+import { X, Camera, Upload, Image as ImageIcon, Plus, Heart } from 'lucide-react';
 import { useWishlist, type WishlistItem } from '../../hooks/useWishlist';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -219,7 +219,20 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
       }
 
       setTimeout(() => {
-              setShowDeleteConfirm(true);
+        onClose();
+      }, 100);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save item');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             {item ? 'Edit Wishlist Item' : 'Add Wishlist Item'}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
@@ -620,23 +633,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
             {item && (
               <button
                 type="button"
-                onClick={async () => {
-                  if (confirm(`Are you sure you want to delete "${item.item_name}" from your wishlist?`)) {
-                    try {
-                      const { error } = await deleteItem(item.id);
-                      if (error) {
-                        setError(error);
-                      } else {
-                        if (onSaved) {
-                          await onSaved();
-                        }
-                        onClose();
-                      }
-                    } catch (err: any) {
-                      setError(err.message || 'Failed to delete item');
-                    }
-                  }
-                }}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
               >
                 Delete
@@ -660,101 +657,101 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
         </form>
       </div>
 
-    {/* Delete Confirmation Modal */}
-    {showDeleteConfirm && item && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md">
-          <div className="p-6">
-            {/* Header with Icon */}
-            <div className="flex items-center justify-center mb-6">
-              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-                <Heart className="h-8 w-8 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
-            
-            {/* Title */}
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
-              Remove from Wishlist?
-            </h3>
-            
-            {/* Message */}
-            <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
-              Are you sure you want to remove{' '}
-              <span className="font-semibold text-gray-900 dark:text-white">
-                "{item.item_name}"
-              </span>{' '}
-              from your wishlist? This action cannot be undone.
-            </p>
-            
-            {/* Item Preview */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-              <div className="flex items-center space-x-3">
-                {imagePreview && (
-                  <img
-                    src={imagePreview}
-                    alt={item.item_name}
-                    className="w-12 h-12 object-cover rounded-lg"
-                  />
-                )}
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900 dark:text-white text-sm">
-                    {item.item_name}
-                  </p>
-                  {formData.desired_price_max && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Max price: ${formData.desired_price_max}
-                    </p>
-                  )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && item && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              {/* Header with Icon */}
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                  <Heart className="h-8 w-8 text-red-600 dark:text-red-400" />
                 </div>
               </div>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-              >
-                Keep Item
-              </button>
-              <button
-                onClick={async () => {
-                  setIsDeleting(true);
-                  try {
-                    const { error } = await deleteItem(item.id);
-                    if (error) {
-                      setError(error);
-                      setShowDeleteConfirm(false);
-                    } else {
-                      if (onSaved) {
-                        await onSaved();
-                      }
-                      onClose();
-                    }
-                  } catch (err: any) {
-                    setError(err.message || 'Failed to delete item');
-                    setShowDeleteConfirm(false);
-                  } finally {
-                    setIsDeleting(false);
-                  }
-                }}
-                disabled={isDeleting}
-                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors font-medium"
-              >
-                {isDeleting ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Removing...
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
+                Remove from Wishlist?
+              </h3>
+              
+              {/* Message */}
+              <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+                Are you sure you want to remove{' '}
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  "{item.item_name}"
+                </span>{' '}
+                from your wishlist? This action cannot be undone.
+              </p>
+              
+              {/* Item Preview */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                <div className="flex items-center space-x-3">
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt={item.item_name}
+                      className="w-12 h-12 object-cover rounded-lg"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">
+                      {item.item_name}
+                    </p>
+                    {formData.desired_price_max && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Max price: ${formData.desired_price_max}
+                      </p>
+                    )}
                   </div>
-                ) : (
-                  'Remove from Wishlist'
-                )}
-              </button>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                >
+                  Keep Item
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsDeleting(true);
+                    try {
+                      const { error } = await deleteItem(item.id);
+                      if (error) {
+                        setError(error);
+                        setShowDeleteConfirm(false);
+                      } else {
+                        if (onSaved) {
+                          await onSaved();
+                        }
+                        onClose();
+                      }
+                    } catch (err: any) {
+                      setError(err.message || 'Failed to delete item');
+                      setShowDeleteConfirm(false);
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors font-medium"
+                >
+                  {isDeleting ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Removing...
+                    </div>
+                  ) : (
+                    'Remove from Wishlist'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   );
 };
