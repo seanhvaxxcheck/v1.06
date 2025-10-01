@@ -93,6 +93,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
   const handleToggleStatus = async (item: WishlistItem) => {
     const newStatus = item.status === 'active' ? 'paused' : 'active';
     await updateItem(item.id, { status: newStatus });
+  };
 
   const closeModal = () => {
     setModalOpen(false);
