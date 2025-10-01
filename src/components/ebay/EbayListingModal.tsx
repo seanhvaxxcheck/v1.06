@@ -113,8 +113,8 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
               body: JSON.stringify({
                 action: 'handle_callback',
                 sessionId: sessionId,
-                user_id: user?.id,
-                username: user?.email,
+                user_id: user.id,
+                username: user.email,
               }),
             });
 
