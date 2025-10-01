@@ -21,7 +21,7 @@ interface WishlistModalProps {
 }
 
 export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onSaved }) => {
-  const { addItem, updateItem, refreshWishlist } = useWishlist();
+  const { addItem, updateItem, deleteItem, refreshWishlist } = useWishlist();
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     item_name: item?.item_name || '',
@@ -624,12 +624,36 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="active">Actively Looking</option>
-              <option value="paused">Paused</option>
               <option value="found">Found</option>
             </select>
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {item && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (confirm(`Are you sure you want to delete "${item.item_name}" from your wishlist?`)) {
+                    try {
+                      const { error } = await deleteItem(item.id);
+                      if (error) {
+                        setError(error);
+                      } else {
+                        if (onSaved) {
+                          await onSaved();
+                        }
+                        onClose();
+                      }
+                    } catch (err: any) {
+                      setError(err.message || 'Failed to delete item');
+                    }
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

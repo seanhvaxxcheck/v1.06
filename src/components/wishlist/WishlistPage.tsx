@@ -146,7 +146,6 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
             >
               <option value="all">All Status</option>
               <option value="active">Actively Looking</option>
-              <option value="paused">Paused</option>
               <option value="found">Found</option>
             </select>
 
