@@ -93,7 +93,6 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
   const handleToggleStatus = async (item: WishlistItem) => {
     const newStatus = item.status === 'active' ? 'paused' : 'active';
     await updateItem(item.id, { status: newStatus });
-  };
 
   const closeModal = () => {
     setModalOpen(false);
@@ -306,36 +305,6 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                       )}
                     </div>
 
-                    {/* Toggle Status Button */}
-                    <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => handleToggleStatus(item)}
-                        className={`w-full flex items-center justify-center px-4 py-2 text-sm rounded-full transition-colors font-medium ${
-                          item.status === 'active' 
-                            ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
-                            : item.status === 'found'
-                            ? 'bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
-                            : 'bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-                        }`}
-                      >
-                        {item.status === 'active' ? (
-                          <>
-                            <Pause className="h-3 w-3 mr-1" />
-                            Pause Search
-                          </>
-                        ) : item.status === 'found' ? (
-                          <>
-                            <Play className="h-3 w-3 mr-1" />
-                            Keep Looking
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-3 w-3 mr-1" />
-                            Resume Search
-                          </>
-                        )}
-                      </button>
-                    </div>
                   </div>
                 </div>
               ))}
