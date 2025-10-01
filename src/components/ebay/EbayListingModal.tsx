@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ExternalLink, DollarSign, Calendar, Package, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { X, ExternalLink, DollarSign, Calendar, Package, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Loader as Loader2 } from 'lucide-react';
 import { useEbayIntegration } from '../../hooks/useEbayIntegration';
 import type { InventoryItem } from '../../hooks/useInventory';
 
