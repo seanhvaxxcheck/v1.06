@@ -41,9 +41,9 @@ Deno.serve(async (req: Request) => {
     // Get eBay API credentials from environment
     const ebayClientId = Deno.env.get('EBAY_CLIENT_ID');
     const ebayClientSecret = Deno.env.get('EBAY_CLIENT_SECRET');
-    const ebayRuName = Deno.env.get('EBAY_RU_NAME');
+    const ebayRedirectUri = Deno.env.get('EBAY_REDIRECT_URI');
     
-    if (!ebayClientId || !ebayClientSecret || !ebayRuName) {
+    if (!ebayClientId || !ebayClientSecret || !ebayRedirectUri) {
       return new Response(
         JSON.stringify({ error: "eBay API credentials not configured" }),
         {
@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
       const authUrl = `https://auth.ebay.com/oauth2/authorize?` +
         `client_id=${encodeURIComponent(ebayClientId)}&` +
         `response_type=code&` +
-        `redirect_uri=${encodeURIComponent(ebayRuName)}&` +
+        `redirect_uri=${encodeURIComponent(ebayRedirectUri)}&` +
         `scope=${encodeURIComponent(scopes.join(' '))}&` +
         `state=${encodeURIComponent(state)}`;
 
@@ -138,7 +138,7 @@ Deno.serve(async (req: Request) => {
         body: new URLSearchParams({
           grant_type: 'authorization_code',
           code: code,
-          redirect_uri: ebayRuName,
+          redirect_uri: ebayRedirectUri,
         }),
       });
 
