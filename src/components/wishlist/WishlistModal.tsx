@@ -309,7 +309,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
               ref={cameraInputRef}
               type="file"
               accept="image/*"
-              capture="user"
+              capture="environment"
               onChange={(e) => e.target.files?.[0] && handleImageSelection(e.target.files[0])}
               className="hidden"
             />
@@ -655,9 +655,8 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
               {loading ? 'Saving...' : (item ? 'Update Item' : 'Add to Wishlist')}
             </button>
           </div>
-          </form>
+        </form>
         </div>
-      </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && item && (
@@ -754,6 +753,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
