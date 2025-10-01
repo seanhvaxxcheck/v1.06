@@ -71,22 +71,68 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
     const { authUrl, error } = await connectToEbay();
     
     if (authUrl) {
-      // Open eBay auth in new window
-      window.open(authUrl, 'ebay-auth', 'width=600,height=700');
+      // Extract session ID from the auth URL
+      const sessionIdMatch = authUrl.match(/SessID=([^&]+)/);
+      const sessionId = sessionIdMatch ? sessionIdMatch[1] : null;
       
-      // Listen for auth completion
+      if (!sessionId) {
+        console.error('No session ID found in auth URL');
+        return;
+      }
+
+      // Open eBay auth in new window
+      const authWindow = window.open(authUrl, 'ebay-auth', 'width=600,height=700');
+      
+      // Listen for auth completion by polling the connection status
       const checkAuth = setInterval(async () => {
-        const connected = await checkEbayConnection();
-        if (connected) {
-          clearInterval(checkAuth);
-          setIsConnected(true);
-          setStep('configure');
-          loadEbayCategories();
+        try {
+          // Check if window is closed (user completed or cancelled auth)
+          if (authWindow?.closed) {
+            console.log('Auth window closed, checking connection...');
+            
+            // Try to complete the authentication with the session ID
+            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-auth`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                action: 'handle_callback',
+                sessionId: sessionId,
+                user_id: user?.id,
+                username: user?.email,
+              }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              if (result.success) {
+                clearInterval(checkAuth);
+                setIsConnected(true);
+                setStep('configure');
+                loadEbayCategories();
+                console.log('eBay authentication successful!');
+              } else {
+                console.log('Authentication not yet complete, continuing to check...');
+              }
+            } else {
+              console.log('Authentication check failed, user may have cancelled');
+              clearInterval(checkAuth);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking auth status:', error);
         }
       }, 2000);
       
       // Stop checking after 5 minutes
-      setTimeout(() => clearInterval(checkAuth), 300000);
+      setTimeout(() => {
+        clearInterval(checkAuth);
+        if (authWindow && !authWindow.closed) {
+          authWindow.close();
+        }
+      }, 300000);
     }
   };
 

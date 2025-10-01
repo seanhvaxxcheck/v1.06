@@ -42,19 +42,24 @@ export const useEbayIntegration = () => {
     if (!user) return false;
 
     try {
-      const { data, error } = await supabase
-        .from('ebay_credentials')
-        .select('expires_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error || !data) return false;
-
-      // Check if token is still valid (not expired)
-      const expiresAt = new Date(data.expires_at);
-      const now = new Date();
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-auth`;
       
-      return expiresAt > now;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'check_connection',
+          user_id: user.id,
+        }),
+      });
+
+      if (!response.ok) return false;
+
+      const result = await response.json();
+      return result.connected || false;
     } catch (err) {
       console.error('Error checking eBay connection:', err);
       return false;

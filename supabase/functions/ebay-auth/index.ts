@@ -209,7 +209,7 @@ Deno.serve(async (req: Request) => {
 
     // HANDLE AUTH CALLBACK
     if (requestData.action === 'handle_callback') {
-      const { sessionId, username } = requestData;
+      const { sessionId, username, user_id } = requestData;
       
       if (!sessionId) {
         return new Response(
@@ -230,7 +230,7 @@ Deno.serve(async (req: Request) => {
         const { error: dbError } = await supabase
           .from('ebay_credentials')
           .upsert({
-            user_id: requestData.user_id,
+            user_id: user_id,
             access_token: tokenData.token,
             refresh_token: '', // Auth'n'Auth doesn't use refresh tokens
             expires_at: tokenData.expiresAt.toISOString(),
@@ -248,7 +248,7 @@ Deno.serve(async (req: Request) => {
           );
         }
 
-        console.log('[CALLBACK] Successfully stored credentials for user:', requestData.user_id);
+        console.log('[CALLBACK] Successfully stored credentials for user:', user_id);
 
         return new Response(
           JSON.stringify({ 
@@ -268,6 +268,50 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // CHECK CONNECTION STATUS
+    if (requestData.action === 'check_connection') {
+      const { user_id } = requestData;
+      
+      if (!user_id) {
+        return new Response(
+          JSON.stringify({ error: "Missing user ID" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      try {
+        const { data: credentials, error: dbError } = await supabase
+          .from('ebay_credentials')
+          .select('expires_at')
+          .eq('user_id', user_id)
+          .maybeSingle();
+
+        if (dbError) {
+          console.error('[CHECK] DB error:', dbError);
+          return new Response(
+            JSON.stringify({ connected: false }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const isConnected = credentials && new Date(credentials.expires_at) > new Date();
+        
+        return new Response(
+          JSON.stringify({ 
+            connected: isConnected,
+            expires_at: credentials?.expires_at
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+
+      } catch (error: any) {
+        console.error('[CHECK] Error checking connection:', error);
+        return new Response(
+          JSON.stringify({ connected: false }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
     return new Response(
       JSON.stringify({ error: "Invalid action" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
