@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Share, Copy, CircleCheck as CheckCircle, ExternalLink, Globe, Eye, EyeOff } from 'lucide-react';
+import { X, Share, Copy, CircleCheck as CheckCircle, ExternalLink, Globe } from 'lucide-react';
 
 interface WishlistShareModalProps {
   isOpen: boolean;
@@ -18,27 +18,20 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
   onClose,
   wishlistItem,
 }) => {
-  const [shareSettings, setShareSettings] = useState({
-    include_price_limit: true,
-    include_search_terms: true,
-    include_facebook_url: false,
-    public_link: true,
-  });
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [showShareOptions, setShowShareOptions] = useState(false);
 
   if (!isOpen) return null;
 
   const generateShareLink = async () => {
     setGenerating(true);
     
-    // Simulate API call to create share link
+    // Simulate API call to create share link tied to this specific item
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const shareId = `wish_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const link = `${window.location.origin}/wishlist/share/${shareId}`;
+    // Generate a link that's tied to this specific wishlist item
+    const link = `${window.location.origin}/wishlist/share/${wishlistItem.id}`;
     setShareLink(link);
     setGenerating(false);
   };
@@ -128,48 +121,6 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
               {wishlistItem.desired_price_max && (
                 <p>Max price: ${wishlistItem.desired_price_max}</p>
               )}
-            </div>
-          </div>
-
-          {/* Share Settings */}
-          <div>
-            <h4 className="font-medium text-gray-900 dark:text-white mb-3">What to include:</h4>
-            <div className="space-y-3">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={shareSettings.include_search_terms}
-                  onChange={(e) => setShareSettings(prev => ({ ...prev, include_search_terms: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                  Include search terms
-                </span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={shareSettings.include_price_limit}
-                  onChange={(e) => setShareSettings(prev => ({ ...prev, include_price_limit: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                  Include price limit
-                </span>
-              </label>
-
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={shareSettings.include_facebook_url}
-                  onChange={(e) => setShareSettings(prev => ({ ...prev, include_facebook_url: e.target.checked }))}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-3 text-sm text-gray-700 dark:text-gray-300">
-                  Include Facebook Marketplace link
-                </span>
-              </label>
             </div>
           </div>
 
