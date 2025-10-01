@@ -47,10 +47,28 @@ async function getEbaySessionToken(ruName: string, devId: string, appId: string,
   const xmlResponse = await response.text();
   console.log('[SESSION] eBay XML response:', xmlResponse);
   
+  // Check for eBay API errors first
+  const ackMatch = xmlResponse.match(/<Ack>([^<]+)<\/Ack>/);
+  if (ackMatch && ackMatch[1] === 'Failure') {
+    const shortMessageMatch = xmlResponse.match(/<ShortMessage>([^<]+)<\/ShortMessage>/);
+    const longMessageMatch = xmlResponse.match(/<LongMessage>([^<]+)<\/LongMessage>/);
+    const errorCode = xmlResponse.match(/<ErrorCode>([^<]+)<\/ErrorCode>/);
+    
+    const errorDetails = {
+      shortMessage: shortMessageMatch ? shortMessageMatch[1] : 'Unknown error',
+      longMessage: longMessageMatch ? longMessageMatch[1] : 'No detailed error message',
+      errorCode: errorCode ? errorCode[1] : 'Unknown code'
+    };
+    
+    console.error('[SESSION] eBay API Error:', errorDetails);
+    throw new Error(`eBay API Error: ${errorDetails.shortMessage} - ${errorDetails.longMessage} (Code: ${errorDetails.errorCode})`);
+  }
+  
   // Parse SessionID from XML response
   const sessionIdMatch = xmlResponse.match(/<SessionID>([^<]+)<\/SessionID>/);
   if (!sessionIdMatch) {
-    throw new Error('No SessionID found in eBay response');
+    console.error('[SESSION] Full eBay response for debugging:', xmlResponse);
+    throw new Error('No SessionID found in eBay response. Check eBay API credentials and RuName configuration.');
   }
 
   return sessionIdMatch[1];
@@ -90,10 +108,28 @@ async function fetchUserToken(sessionId: string, devId: string, appId: string, c
   const xmlResponse = await response.text();
   console.log('[TOKEN] eBay XML response:', xmlResponse);
   
+  // Check for eBay API errors first
+  const ackMatch = xmlResponse.match(/<Ack>([^<]+)<\/Ack>/);
+  if (ackMatch && ackMatch[1] === 'Failure') {
+    const shortMessageMatch = xmlResponse.match(/<ShortMessage>([^<]+)<\/ShortMessage>/);
+    const longMessageMatch = xmlResponse.match(/<LongMessage>([^<]+)<\/LongMessage>/);
+    const errorCode = xmlResponse.match(/<ErrorCode>([^<]+)<\/ErrorCode>/);
+    
+    const errorDetails = {
+      shortMessage: shortMessageMatch ? shortMessageMatch[1] : 'Unknown error',
+      longMessage: longMessageMatch ? longMessageMatch[1] : 'No detailed error message',
+      errorCode: errorCode ? errorCode[1] : 'Unknown code'
+    };
+    
+    console.error('[TOKEN] eBay API Error:', errorDetails);
+    throw new Error(`eBay API Error: ${errorDetails.shortMessage} - ${errorDetails.longMessage} (Code: ${errorDetails.errorCode})`);
+  }
+  
   // Parse eBayAuthToken from XML response
   const tokenMatch = xmlResponse.match(/<eBayAuthToken>([^<]+)<\/eBayAuthToken>/);
   if (!tokenMatch) {
-    throw new Error('No eBayAuthToken found in response');
+    console.error('[TOKEN] Full eBay response for debugging:', xmlResponse);
+    throw new Error('No eBayAuthToken found in response. The session may have expired or authentication failed.');
   }
 
   // Parse expiration date
