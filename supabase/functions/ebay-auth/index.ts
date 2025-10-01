@@ -41,9 +41,9 @@ Deno.serve(async (req: Request) => {
     // Get eBay API credentials from environment
     const ebayClientId = Deno.env.get('EBAY_CLIENT_ID');
     const ebayClientSecret = Deno.env.get('EBAY_CLIENT_SECRET');
-    const ebayRedirectUri = Deno.env.get('EBAY_REDIRECT_URI') || `${Deno.env.get('SUPABASE_URL')}/functions/v1/ebay-auth`;
+    const ebayRedirectUri = Deno.env.get('EBAY_REDIRECT_URI');
     
-    if (!ebayClientId || !ebayClientSecret) {
+    if (!ebayClientId || !ebayClientSecret || !ebayRedirectUri) {
       return new Response(
         JSON.stringify({ error: "eBay API credentials not configured" }),
         {
@@ -56,15 +56,40 @@ Deno.serve(async (req: Request) => {
     const requestData: EbayAuthRequest = await req.json();
 
     if (requestData.action === 'get_auth_url') {
-      // Generate eBay OAuth URL
+      // Generate eBay OAuth2 URL with proper scopes
       const state = `user_${requestData.user_id}_${Date.now()}`;
       
-      // Use eBay's traditional sign-in URL format instead of OAuth2
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const ruName = ebayClientId; // Use client ID as RuName for now
-      
-      // Use eBay's traditional authentication URL format
-      const authUrl = `https://signin.ebay.com/ws/eBayISAPI.dll?SignIn&runame=${encodeURIComponent(ruName)}&SessID=${sessionId}`;
+      const scopes = [
+        'https://api.ebay.com/oauth/api_scope',
+        'https://api.ebay.com/oauth/api_scope/sell.marketing.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.marketing',
+        'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.inventory',
+        'https://api.ebay.com/oauth/api_scope/sell.account.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.account',
+        'https://api.ebay.com/oauth/api_scope/sell.fulfillment.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
+        'https://api.ebay.com/oauth/api_scope/sell.analytics.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.finances',
+        'https://api.ebay.com/oauth/api_scope/sell.payment.dispute',
+        'https://api.ebay.com/oauth/api_scope/commerce.identity.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.reputation',
+        'https://api.ebay.com/oauth/api_scope/sell.reputation.readonly',
+        'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription',
+        'https://api.ebay.com/oauth/api_scope/commerce.notification.subscription.readonly',
+        'https://api.ebay.com/oauth/api_scope/sell.stores',
+        'https://api.ebay.com/oauth/api_scope/sell.stores.readonly',
+        'https://api.ebay.com/oauth/scope/sell.edelivery'
+      ];
+
+      const authUrl = `https://auth.ebay.com/oauth2/authorize?` +
+        `client_id=${encodeURIComponent(ebayClientId)}&` +
+        `response_type=code&` +
+        `redirect_uri=${encodeURIComponent(ebayRedirectUri)}&` +
+        `scope=${encodeURIComponent(scopes.join(' '))}&` +
+        `state=${encodeURIComponent(state)}`;
+
+      console.log('Generated eBay OAuth URL:', authUrl);
 
       return new Response(
         JSON.stringify({ auth_url: authUrl }),
@@ -76,12 +101,12 @@ Deno.serve(async (req: Request) => {
     }
 
     if (requestData.action === 'handle_callback') {
-      // Handle eBay traditional auth callback
-      const { sessionId, username } = requestData;
+      // Handle eBay OAuth2 callback
+      const { code, state } = requestData;
       
-      if (!sessionId || !username) {
+      if (!code || !state) {
         return new Response(
-          JSON.stringify({ error: "Missing session ID or username" }),
+          JSON.stringify({ error: "Missing authorization code or state" }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -89,12 +114,13 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Extract user ID from session ID
-      const userId = sessionId.split('_')[1];
+      // Extract user ID from state
+      const stateMatch = state.match(/^user_(.+)_\d+$/);
+      const userId = stateMatch ? stateMatch[1] : null;
       
       if (!userId) {
         return new Response(
-          JSON.stringify({ error: "Invalid session ID parameter" }),
+          JSON.stringify({ error: "Invalid state parameter" }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -102,29 +128,25 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Get eBay auth token using traditional API
-      const tokenResponse = await fetch('https://api.ebay.com/ws/api.dll', {
+      // Exchange authorization code for access token
+      const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
         method: 'POST',
         headers: {
-          'Content-Type': 'text/xml',
-          'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
-          'X-EBAY-API-DEV-NAME': Deno.env.get('EBAY_DEV_ID') || '',
-          'X-EBAY-API-APP-NAME': ebayClientId,
-          'X-EBAY-API-CERT-NAME': ebayClientSecret,
-          'X-EBAY-API-CALL-NAME': 'FetchToken',
-          'X-EBAY-API-SITEID': '0',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${btoa(`${ebayClientId}:${ebayClientSecret}`)}`,
         },
-        body: `<?xml version="1.0" encoding="utf-8"?>
-          <FetchTokenRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-            <SessionID>${sessionId}</SessionID>
-          </FetchTokenRequest>`,
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: ebayRedirectUri,
+        }),
       });
 
       if (!tokenResponse.ok) {
         const errorData = await tokenResponse.text();
-        console.error('eBay token fetch failed:', errorData);
+        console.error('eBay token exchange failed:', errorData);
         return new Response(
-          JSON.stringify({ error: "Failed to fetch eBay token" }),
+          JSON.stringify({ error: "Failed to exchange authorization code for token" }),
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -132,34 +154,20 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      const tokenXml = await tokenResponse.text();
-      
-      // Parse XML response to extract token (simplified parsing)
-      const tokenMatch = tokenXml.match(/<eBayAuthToken>(.*?)<\/eBayAuthToken>/);
-      const token = tokenMatch ? tokenMatch[1] : null;
-      
-      if (!token) {
-        console.error('No token found in eBay response:', tokenXml);
-        return new Response(
-          JSON.stringify({ error: "Failed to extract eBay token" }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
+      const tokenData = await tokenResponse.json();
       
       // Calculate expiration time
-      const expiresAt = new Date(Date.now() + (18 * 60 * 60 * 1000)); // 18 hours for eBay auth tokens
+      const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
 
       // Store credentials in database
       const { error: dbError } = await supabase
         .from('ebay_credentials')
         .upsert({
           user_id: userId,
-          access_token: token,
-          refresh_token: '', // eBay traditional auth doesn't use refresh tokens
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
           expires_at: expiresAt.toISOString(),
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
@@ -176,10 +184,13 @@ Deno.serve(async (req: Request) => {
         );
       }
 
+      console.log('Successfully stored eBay credentials for user:', userId);
+
       return new Response(
         JSON.stringify({ 
           success: true,
-          expires_at: expiresAt.toISOString()
+          expires_at: expiresAt.toISOString(),
+          message: "eBay account connected successfully"
         }),
         {
           status: 200,
