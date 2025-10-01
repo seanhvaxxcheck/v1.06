@@ -80,8 +80,16 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
         return;
       }
 
+      console.log('Opening eBay auth window with URL:', authUrl);
+      console.log('Session ID extracted:', sessionId);
+      
       // Open eBay auth in new window
       const authWindow = window.open(authUrl, 'ebay-auth', 'width=600,height=700');
+      
+      if (!authWindow) {
+        console.error('Failed to open auth window - popup may be blocked');
+        return;
+      }
       
       // Listen for auth completion by polling the connection status
       const checkAuth = setInterval(async () => {
@@ -107,6 +115,7 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
 
             if (response.ok) {
               const result = await response.json();
+              console.log('Callback response:', result);
               if (result.success) {
                 clearInterval(checkAuth);
                 setIsConnected(true);
@@ -114,10 +123,11 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
                 loadEbayCategories();
                 console.log('eBay authentication successful!');
               } else {
-                console.log('Authentication not yet complete, continuing to check...');
+                console.log('Authentication not yet complete:', result);
               }
             } else {
-              console.log('Authentication check failed, user may have cancelled');
+              const errorData = await response.json();
+              console.log('Authentication check failed:', errorData);
               clearInterval(checkAuth);
             }
           }
@@ -132,7 +142,10 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
         if (authWindow && !authWindow.closed) {
           authWindow.close();
         }
+        console.log('Auth timeout - stopped checking after 5 minutes');
       }, 300000);
+    } else if (error) {
+      console.error('Failed to get auth URL:', error);
     }
   };
 
