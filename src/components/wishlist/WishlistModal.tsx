@@ -309,7 +309,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
               ref={cameraInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
+             capture="camera"
               onChange={(e) => e.target.files?.[0] && handleImageSelection(e.target.files[0])}
               className="hidden"
             />
