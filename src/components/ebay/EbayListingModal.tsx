@@ -68,46 +68,38 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
   };
 
   const handleConnectEbay = async () => {
-  // Open a blank popup immediately on user click to avoid browser blocking
-  const authWindow = window.open('', 'ebay-auth', 'width=600,height=700');
-
-  if (!authWindow) {
-    console.error('Popup blocked! Please allow popups for this site.');
-    return;
-  }
-
-  try {
-    // Call your Supabase function to get the eBay auth URL
     const { authUrl, error } = await connectToEbay();
+    
+    if (authUrl) {
+      // Extract session ID from the auth URL
+      const sessionIdMatch = authUrl.match(/SessID=([^&]+)/);
+      const sessionId = sessionIdMatch ? sessionIdMatch[1] : null;
+      
+      if (!sessionId) {
+        console.error('No session ID found in auth URL');
+        return;
+      }
 
-    if (!authUrl || error) {
-      console.error('Failed to get eBay auth URL:', error);
-      authWindow.close();
-      return;
-    }
-
-    // Set the popup location to the eBay login/consent URL
-    authWindow.location.href = authUrl;
-
-    // Extract session ID (if present in the URL)
-    const sessionIdMatch = authUrl.match(/SessID=([^&]+)/);
-    const sessionId = sessionIdMatch ? sessionIdMatch[1] : null;
-
-    if (!sessionId) {
-      console.error('No session ID found in auth URL');
-      authWindow.close();
-      return;
-    }
-
-    // Poll to detect when the popup closes
-    const checkAuth = setInterval(async () => {
-      if (authWindow.closed) {
-        console.log('Auth window closed, verifying connection…');
-
+      console.log('Opening eBay auth window with URL:', authUrl);
+      console.log('Session ID extracted:', sessionId);
+      
+      // Open eBay auth in new window
+      const authWindow = window.open(authUrl, 'ebay-auth', 'width=600,height=700');
+      
+      if (!authWindow) {
+        console.error('Failed to open auth window - popup may be blocked');
+        return;
+      }
+      
+      // Listen for auth completion by polling the connection status
+      const checkAuth = setInterval(async () => {
         try {
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-auth`,
-            {
+          // Check if window is closed (user completed or cancelled auth)
+          if (authWindow?.closed) {
+            console.log('Auth window closed, checking connection...');
+            
+            // Try to complete the authentication with the session ID
+            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-auth`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -115,51 +107,47 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
               },
               body: JSON.stringify({
                 action: 'handle_callback',
-                sessionId,
+                sessionId: sessionId,
                 user_id: user?.id,
                 username: user?.email,
               }),
-            }
-          );
+            });
 
-          if (response.ok) {
-            const result = await response.json();
-            console.log('Callback response:', result);
-
-            if (result.success) {
-              clearInterval(checkAuth);
-              setIsConnected(true);
-              setStep('configure');
-              loadEbayCategories();
-              console.log('✅ eBay authentication successful!');
+            if (response.ok) {
+              const result = await response.json();
+              console.log('Callback response:', result);
+              if (result.success) {
+                clearInterval(checkAuth);
+                setIsConnected(true);
+                setStep('configure');
+                loadEbayCategories();
+                console.log('eBay authentication successful!');
+              } else {
+                console.log('Authentication not yet complete:', result);
+              }
             } else {
-              console.log('Authentication not complete yet:', result);
-            }
-          } else {
-            const errorData = await response.json();
-            console.error('Auth check failed:', errorData);
-            clearInterval(checkAuth);
+              const errorData = await response.json();
+              console.log('Authentication check failed:', errorData);
+              clearInterval(checkAuth);
+            } 
           }
-        } catch (err) {
-          console.error('Error verifying eBay auth:', err);
-          clearInterval(checkAuth);
+        } catch (error) {
+          console.error('Error checking auth status:', error);
         }
-      }
-    }, 2000);
-
-    // Stop polling after 5 minutes
-    setTimeout(() => {
-      clearInterval(checkAuth);
-      if (!authWindow.closed) {
-        authWindow.close();
-      }
-      console.log('Auth timeout - stopped after 5 minutes');
-    }, 300000);
-  } catch (err) {
-    console.error('Unexpected error during eBay connect:', err);
-    authWindow.close();
-  }
-};
+      }, 2000);
+      
+      // Stop checking after 5 minutes
+      setTimeout(() => {
+        clearInterval(checkAuth);
+        if (authWindow && !authWindow.closed) {
+          authWindow.close();
+        }
+        console.log('Auth timeout - stopped checking after 5 minutes');
+      }, 300000);
+    } else if (error) {
+      console.error('Failed to get auth URL:', error);
+    }
+  };
 
   const handleCreateListing = async () => {
     setStep('listing');
