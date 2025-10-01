@@ -9,67 +9,101 @@ const corsHeaders = {
 interface EbayAuthRequest {
   action: 'get_auth_url' | 'handle_callback' | 'refresh_token';
   user_id?: string;
-  code?: string;
-  state?: string;
+  sessionId?: string;
+  username?: string;
 }
 
-// Helper: Refresh eBay token
-async function refreshEbayToken(userId: string, supabase: any, ebayClientId: string, ebayClientSecret: string) {
-  console.log('[REFRESH] Getting credentials for user:', userId);
+// Helper: Get eBay session token
+async function getEbaySessionToken(ruName: string, devId: string, appId: string, certId: string) {
+  console.log('[SESSION] Getting eBay session token...');
   
-  const { data: creds, error: fetchError } = await supabase
-    .from('ebay_credentials')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
+<GetSessionIDRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <RequesterCredentials>
+    <eBayAuthToken></eBayAuthToken>
+    <Username></Username>
+  </RequesterCredentials>
+  <RuName>${ruName}</RuName>
+</GetSessionIDRequest>`;
 
-  if (fetchError || !creds) {
-    throw new Error('No eBay credentials found');
-  }
-
-  // Check if token needs refresh (expires in less than 5 minutes)
-  const expiresAt = new Date(creds.expires_at);
-  const now = new Date();
-  const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / 1000 / 60;
-
-  if (minutesUntilExpiry > 5) {
-    console.log('[REFRESH] Token still valid for', Math.round(minutesUntilExpiry), 'minutes');
-    return { access_token: creds.access_token, refreshed: false };
-  }
-
-  console.log('[REFRESH] Token expiring soon, refreshing...');
-
-  const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+  const response = await fetch('https://api.ebay.com/ws/api.dll', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${btoa(`${ebayClientId}:${ebayClientSecret}`)}`,
+      'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+      'X-EBAY-API-DEV-NAME': devId,
+      'X-EBAY-API-APP-NAME': appId,
+      'X-EBAY-API-CERT-NAME': certId,
+      'X-EBAY-API-CALL-NAME': 'GetSessionID',
+      'X-EBAY-API-SITEID': '0',
+      'Content-Type': 'text/xml',
     },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: creds.refresh_token,
-    }),
+    body: xmlRequest,
   });
 
-  if (!tokenResponse.ok) {
-    throw new Error(`Token refresh failed: ${tokenResponse.status}`);
+  if (!response.ok) {
+    throw new Error(`Failed to get session token: ${response.status}`);
   }
 
-  const tokenData = await tokenResponse.json();
-  const newExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
+  const xmlResponse = await response.text();
+  console.log('[SESSION] eBay XML response:', xmlResponse);
+  
+  // Parse SessionID from XML response
+  const sessionIdMatch = xmlResponse.match(/<SessionID>([^<]+)<\/SessionID>/);
+  if (!sessionIdMatch) {
+    throw new Error('No SessionID found in eBay response');
+  }
 
-  // Update database
-  await supabase
-    .from('ebay_credentials')
-    .update({
-      access_token: tokenData.access_token,
-      expires_at: newExpiresAt.toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId);
+  return sessionIdMatch[1];
+}
 
-  console.log('[REFRESH] Token refreshed successfully');
-  return { access_token: tokenData.access_token, refreshed: true };
+// Helper: Fetch user token after authentication
+async function fetchUserToken(sessionId: string, devId: string, appId: string, certId: string) {
+  console.log('[TOKEN] Fetching user token for session:', sessionId);
+  
+  const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
+<FetchTokenRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <RequesterCredentials>
+    <eBayAuthToken></eBayAuthToken>
+    <Username></Username>
+  </RequesterCredentials>
+  <SessionID>${sessionId}</SessionID>
+</FetchTokenRequest>`;
+
+  const response = await fetch('https://api.ebay.com/ws/api.dll', {
+    method: 'POST',
+    headers: {
+      'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+      'X-EBAY-API-DEV-NAME': devId,
+      'X-EBAY-API-APP-NAME': appId,
+      'X-EBAY-API-CERT-NAME': certId,
+      'X-EBAY-API-CALL-NAME': 'FetchToken',
+      'X-EBAY-API-SITEID': '0',
+      'Content-Type': 'text/xml',
+    },
+    body: xmlRequest,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch token: ${response.status}`);
+  }
+
+  const xmlResponse = await response.text();
+  console.log('[TOKEN] eBay XML response:', xmlResponse);
+  
+  // Parse eBayAuthToken from XML response
+  const tokenMatch = xmlResponse.match(/<eBayAuthToken>([^<]+)<\/eBayAuthToken>/);
+  if (!tokenMatch) {
+    throw new Error('No eBayAuthToken found in response');
+  }
+
+  // Parse expiration date
+  const expirationMatch = xmlResponse.match(/<HardExpirationTime>([^<]+)<\/HardExpirationTime>/);
+  const expirationDate = expirationMatch ? new Date(expirationMatch[1]) : new Date(Date.now() + 18 * 30 * 24 * 60 * 60 * 1000); // 18 months default
+
+  return {
+    token: tokenMatch[1],
+    expiresAt: expirationDate,
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -95,13 +129,22 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const ebayClientId = Deno.env.get('EBAY_CLIENT_ID');
-    const ebayClientSecret = Deno.env.get('EBAY_CLIENT_SECRET');
-    const ebayRedirectUri = Deno.env.get('EBAY_REDIRECT_URI');
+    const ebayDevId = Deno.env.get('EBAY_DEV_ID');
+    const ebayAppId = Deno.env.get('EBAY_CLIENT_ID');
+    const ebayCertId = Deno.env.get('EBAY_CLIENT_SECRET');
+    const ebayRuName = Deno.env.get('EBAY_RU_NAME');
     
-    if (!ebayClientId || !ebayClientSecret || !ebayRedirectUri) {
+    if (!ebayDevId || !ebayAppId || !ebayCertId || !ebayRuName) {
       return new Response(
-        JSON.stringify({ error: "eBay API credentials not configured" }),
+        JSON.stringify({ 
+          error: "eBay API credentials not configured",
+          missing: {
+            devId: !ebayDevId,
+            appId: !ebayAppId,
+            certId: !ebayCertId,
+            ruName: !ebayRuName
+          }
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -110,141 +153,91 @@ Deno.serve(async (req: Request) => {
 
     // GENERATE AUTH URL
     if (requestData.action === 'get_auth_url') {
-      // Crypto-secure random state
-      const randomBytes = crypto.getRandomValues(new Uint8Array(16));
-      const randomHex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-      const state = `${requestData.user_id}_${randomHex}`;
-      
-      // Minimal required scopes for listing items
-      const scopes = [
-        'https://api.ebay.com/oauth/api_scope/sell.inventory',
-        'https://api.ebay.com/oauth/api_scope/sell.inventory.readonly',
-        'https://api.ebay.com/oauth/api_scope/sell.fulfillment',
-        'https://api.ebay.com/oauth/api_scope/sell.account.readonly'
-      ];
+      try {
+        // Get session token from eBay
+        const sessionId = await getEbaySessionToken(ebayRuName, ebayDevId, ebayAppId, ebayCertId);
+        
+        // Generate the Auth'n'Auth URL
+        const authUrl = `https://signin.ebay.com/ws/eBayISAPI.dll?SignIn&runame=${ebayRuName}&SessID=${sessionId}`;
+        
+        console.log('[AUTH] Generated Auth\'n\'Auth URL for user:', requestData.user_id);
+        console.log('[AUTH] Session ID:', sessionId);
 
-      const authUrl = `https://auth.ebay.com/oauth2/authorize?` +
-        `client_id=${encodeURIComponent(ebayClientId)}&` +
-        `response_type=code&` +
-        `redirect_uri=${encodeURIComponent(ebayRedirectUri)}&` +
-        `scope=${encodeURIComponent(scopes.join(' '))}&` +
-        `state=${encodeURIComponent(state)}`;
-
-      console.log('[AUTH] Generated OAuth URL for user:', requestData.user_id);
-
-      return new Response(
-        JSON.stringify({ auth_url: authUrl, state }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // HANDLE OAUTH CALLBACK
-    if (requestData.action === 'handle_callback') {
-      const { code, state } = requestData;
-      
-      if (!code || !state) {
         return new Response(
-          JSON.stringify({ error: "Missing code or state" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ 
+            auth_url: authUrl, 
+            session_id: sessionId 
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
-      }
-
-      // Extract user ID from state (format: userId_randomHex)
-      const userId = state.split('_')[0];
-      
-      if (!userId) {
+      } catch (error: any) {
+        console.error('[AUTH] Error generating auth URL:', error);
         return new Response(
-          JSON.stringify({ error: "Invalid state parameter" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      console.log('[CALLBACK] Exchanging code for token, user:', userId);
-
-      // Exchange code for token
-      const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${ebayClientId}:${ebayClientSecret}`)}`,
-        },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          code: code,
-          redirect_uri: ebayRedirectUri,
-        }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('[CALLBACK] Token exchange failed:', errorText);
-        return new Response(
-          JSON.stringify({ error: "Failed to get eBay token", details: errorText }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const tokenData = await tokenResponse.json();
-      const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
-
-      // Store in database
-      const { error: dbError } = await supabase
-        .from('ebay_credentials')
-        .upsert({
-          user_id: userId,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: expiresAt.toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (dbError) {
-        console.error('[CALLBACK] DB error:', dbError);
-        return new Response(
-          JSON.stringify({ error: "Failed to store credentials", details: dbError.message }),
+          JSON.stringify({ error: "Failed to generate auth URL", details: error.message }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
-      console.log('[CALLBACK] Successfully stored credentials for user:', userId);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          expires_at: expiresAt.toISOString(),
-          message: "eBay connected successfully"
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
-    // REFRESH TOKEN
-    if (requestData.action === 'refresh_token') {
-      if (!requestData.user_id) {
+    // HANDLE AUTH CALLBACK
+    if (requestData.action === 'handle_callback') {
+      const { sessionId, username } = requestData;
+      
+      if (!sessionId) {
         return new Response(
-          JSON.stringify({ error: "user_id required" }),
+          JSON.stringify({ error: "Missing session ID" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const result = await refreshEbayToken(
-        requestData.user_id, 
-        supabase, 
-        ebayClientId, 
-        ebayClientSecret
-      );
+      console.log('[CALLBACK] Processing callback for session:', sessionId);
 
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          refreshed: result.refreshed,
-          message: result.refreshed ? "Token refreshed" : "Token still valid"
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      try {
+        // Fetch the user token using the session ID
+        const tokenData = await fetchUserToken(sessionId, ebayDevId, ebayAppId, ebayCertId);
+        
+        console.log('[CALLBACK] Successfully fetched user token');
+
+        // Store in database
+        const { error: dbError } = await supabase
+          .from('ebay_credentials')
+          .upsert({
+            user_id: requestData.user_id,
+            access_token: tokenData.token,
+            refresh_token: '', // Auth'n'Auth doesn't use refresh tokens
+            expires_at: tokenData.expiresAt.toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (dbError) {
+          console.error('[CALLBACK] DB error:', dbError);
+          return new Response(
+            JSON.stringify({ error: "Failed to store credentials", details: dbError.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log('[CALLBACK] Successfully stored credentials for user:', requestData.user_id);
+
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            expires_at: tokenData.expiresAt.toISOString(),
+            message: "eBay connected successfully"
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+
+      } catch (error: any) {
+        console.error('[CALLBACK] Error fetching token:', error);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch eBay token", details: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     return new Response(
