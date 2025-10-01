@@ -413,7 +413,6 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
                   <option key={subcategory.id} value={subcategory.name}>
                     {subcategory.name}
                   </option>
-                <option value="__add_new__">+ Add New Condition</option>
                 ))}
                 <option value="__add_new__">+ Add New Subcategory</option>
               {showAddCondition && (
