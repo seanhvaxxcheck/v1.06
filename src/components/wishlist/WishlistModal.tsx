@@ -1,25 +1,172 @@
-import React, { useState } from 'react';
-import { X, CircleAlert as AlertCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Camera, Upload, Image as ImageIcon, Plus } from 'lucide-react';
 import { useWishlist, type WishlistItem } from '../../hooks/useWishlist';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { 
+  getActiveCustomFields,
+  getAllCategoriesSync,
+  getAllConditionsSync,
+  getAllSubcategoriesSync,
+  addCustomCategory,
+  addCustomCondition,
+  addCustomSubcategory,
+  type CustomField
+} from '../../utils/customFields';
 
 interface WishlistModalProps {
   item?: WishlistItem | null;
   onClose: () => void;
-  onSaved?: () => void; // callback to refresh parent
+  onSaved?: () => void;
 }
 
 export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onSaved }) => {
   const { addItem, updateItem, refreshWishlist } = useWishlist();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     item_name: item?.item_name || '',
-    ebay_search_term: item?.ebay_search_term || '',
-    facebook_marketplace_url: item?.facebook_marketplace_url || '',
+    category: item?.category || '',
+    subcategory: item?.subcategory || '',
+    manufacturer: item?.manufacturer || '',
+    pattern: item?.pattern || '',
+    year_manufactured: item?.year_manufactured || '',
     desired_price_max: item?.desired_price_max || '',
+    condition: item?.condition || 'good',
+    location: item?.location || '',
+    description: item?.description || '',
     status: (item?.status as any) || 'active',
-    additional_search_terms: item?.additional_search_terms || '',
+    quantity: item?.quantity || 1,
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(item?.photo_url || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showAddCondition, setShowAddCondition] = useState(false);
+  const [showAddSubcategory, setShowAddSubcategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newConditionName, setNewConditionName] = useState('');
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch custom fields on component mount
+  React.useEffect(() => {
+    const fetchCustomFields = async () => {
+      if (user?.id) {
+        try {
+          const fields = await getActiveCustomFields(user.id);
+          setCustomFields(fields);
+        } catch (error) {
+          console.error('Error fetching custom fields:', error);
+        }
+      }
+    };
+
+    fetchCustomFields();
+  }, [user?.id]);
+
+  const allCategories = getAllCategoriesSync(customFields);
+  const allConditions = getAllConditionsSync(customFields);
+  const allSubcategories = getAllSubcategoriesSync(customFields);
+
+  const handleImageSelection = (file: File) => {
+    setSelectedImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadPhoto = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `wishlist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('item-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('item-photos')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (err: any) {
+      console.error('Photo upload error:', err);
+      throw err;
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim() || !user?.id) return;
+
+    try {
+      const result = await addCustomCategory(newCategoryName.trim(), user.id);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        const fields = await getActiveCustomFields(user.id);
+        setCustomFields(fields);
+        setFormData({ ...formData, category: newCategoryName.trim() });
+        setNewCategoryName('');
+        setShowAddCategory(false);
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to add category');
+    }
+  };
+
+  const handleAddCondition = async () => {
+    if (!newConditionName.trim() || !user?.id) return;
+
+    try {
+      const result = await addCustomCondition(newConditionName.trim(), user.id);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        const fields = await getActiveCustomFields(user.id);
+        setCustomFields(fields);
+        setFormData({ ...formData, condition: newConditionName.trim() });
+        setNewConditionName('');
+        setShowAddCondition(false);
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to add condition');
+    }
+  };
+
+  const handleAddSubcategory = async () => {
+    if (!newSubcategoryName.trim() || !user?.id) return;
+
+    try {
+      const result = await addCustomSubcategory(newSubcategoryName.trim(), user.id);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        const fields = await getActiveCustomFields(user.id);
+        setCustomFields(fields);
+        setFormData({ ...formData, subcategory: newSubcategoryName.trim() });
+        setNewSubcategoryName('');
+        setShowAddSubcategory(false);
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to add subcategory');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,16 +179,26 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
       return;
     }
 
-    if (!formData.ebay_search_term.trim() && !formData.facebook_marketplace_url.trim()) {
-      setError('Please provide either an eBay search term or Facebook Marketplace URL');
+    if (!formData.category.trim()) {
+      setError('Category is required');
       setLoading(false);
       return;
     }
 
     try {
+      let photoUrl = imagePreview;
+
+      // Upload new photo if selected
+      if (selectedImage) {
+        photoUrl = await uploadPhoto(selectedImage);
+      }
+
       const itemData = {
         ...formData,
         desired_price_max: formData.desired_price_max ? Number(formData.desired_price_max) : null,
+        year_manufactured: formData.year_manufactured ? Number(formData.year_manufactured) : null,
+        quantity: Number(formData.quantity) || 1,
+        photo_url: photoUrl,
       };
 
       let result;
@@ -53,15 +210,12 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
 
       if (result?.error) throw new Error(result.error);
 
-      // ✅ Force refresh the wishlist data
       await refreshWishlist();
       
-      // ✅ Notify parent component to refresh its UI if needed
       if (onSaved) {
         await onSaved();
       }
 
-      // ✅ Small delay to ensure state updates before closing
       setTimeout(() => {
         onClose();
       }, 100);
@@ -92,9 +246,78 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
             </div>
           )}
 
+          {/* Photo Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Photo
+            </label>
+            <div className="space-y-4">
+              {imagePreview ? (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Item preview"
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImagePreview(null);
+                      setSelectedImage(null);
+                    }}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                  <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">Add a photo of the item you want</p>
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Take Photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Photo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => e.target.files?.[0] && handleImageSelection(e.target.files[0])}
+              className="hidden"
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => e.target.files?.[0] && handleImageSelection(e.target.files[0])}
+              className="hidden"
+            />
+          </div>
+
           {/* Item Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Name *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Item Name *
+            </label>
             <input
               type="text"
               value={formData.item_name}
@@ -105,77 +328,302 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
             />
           </div>
 
-          {/* eBay Search Term */}
+          {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">eBay Search Term</label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              Keywords to search for on eBay (e.g., "fenton hobnail milk glass vase")
-            </p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Category *
+            </label>
+            <div className="relative">
+              <select
+                value={formData.category}
+                onChange={e => {
+                  if (e.target.value === '__add_new__') {
+                    setShowAddCategory(true);
+                  } else {
+                    setFormData({ ...formData, category: e.target.value });
+                  }
+                }}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Select category</option>
+                {allCategories.map((category) => (
+                  <option key={category.id} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
+                <option value="__add_new__">+ Add New Category</option>
+              </select>
+
+              {showAddCategory && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 p-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Enter category name"
+                      className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCategory}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddCategory(false);
+                        setNewCategoryName('');
+                      }}
+                      className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Subcategory */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Subcategory
+            </label>
+            <div className="relative">
+              <select
+                value={formData.subcategory}
+                onChange={e => {
+                  if (e.target.value === '__add_new__') {
+                    setShowAddSubcategory(true);
+                  } else {
+                    setFormData({ ...formData, subcategory: e.target.value });
+                  }
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Select subcategory (optional)</option>
+                {allSubcategories.map((subcategory) => (
+                  <option key={subcategory.id} value={subcategory.name}>
+                    {subcategory.name}
+                  </option>
+                ))}
+                <option value="__add_new__">+ Add New Subcategory</option>
+              </select>
+
+              {showAddSubcategory && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 p-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                      placeholder="Enter subcategory name"
+                      className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory()}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSubcategory}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddSubcategory(false);
+                        setNewSubcategoryName('');
+                      }}
+                      className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Manufacturer and Pattern */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Manufacturer
+              </label>
+              <input
+                type="text"
+                value={formData.manufacturer}
+                onChange={e => setFormData({ ...formData, manufacturer: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g., Fenton, Fire-King"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Pattern
+              </label>
+              <input
+                type="text"
+                value={formData.pattern}
+                onChange={e => setFormData({ ...formData, pattern: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g., Hobnail, Swirl"
+              />
+            </div>
+          </div>
+
+          {/* Year and Quantity */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Year Manufactured
+              </label>
+              <input
+                type="number"
+                min="1800"
+                max={new Date().getFullYear()}
+                value={formData.year_manufactured}
+                onChange={e => setFormData({ ...formData, year_manufactured: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                placeholder="e.g., 1950"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Quantity Wanted
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={formData.quantity}
+                onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+
+          {/* Desired Price and Condition */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Maximum Price ($)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.desired_price_max}
+                onChange={e => setFormData({ ...formData, desired_price_max: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Desired Condition
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.condition}
+                  onChange={e => {
+                    if (e.target.value === '__add_new__') {
+                      setShowAddCondition(true);
+                    } else {
+                      setFormData({ ...formData, condition: e.target.value });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                >
+                  {allConditions.map((condition) => (
+                    <option key={condition.id} value={condition.name}>
+                      {condition.name}
+                    </option>
+                  ))}
+                  <option value="__add_new__">+ Add New Condition</option>
+                </select>
+
+                {showAddCondition && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 p-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newConditionName}
+                        onChange={(e) => setNewConditionName(e.target.value)}
+                        placeholder="Enter condition name"
+                        className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddCondition()}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCondition}
+                        className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddCondition(false);
+                          setNewConditionName('');
+                        }}
+                        className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Preferred Location/Source
+            </label>
             <input
               type="text"
-              value={formData.ebay_search_term}
-              onChange={e => setFormData({ ...formData, ebay_search_term: e.target.value })}
+              value={formData.location}
+              onChange={e => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-              placeholder="e.g., fenton hobnail milk glass vase"
+              placeholder="e.g., Local antique shops, eBay, Estate sales"
             />
           </div>
 
-          {/* Facebook Marketplace URL */}
+          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Facebook Marketplace URL</label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              Direct link to a Facebook Marketplace search or specific listing
-            </p>
-            <input
-              type="url"
-              value={formData.facebook_marketplace_url}
-              onChange={e => setFormData({ ...formData, facebook_marketplace_url: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-              placeholder="https://www.facebook.com/marketplace/..."
-            />
-          </div>
-
-          {/* Additional Search Platforms */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Search Terms</label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              Alternative keywords for broader search coverage
-            </p>
-            <input
-              type="text"
-              value={formData.additional_search_terms || ''}
-              onChange={e => setFormData({ ...formData, additional_search_terms: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-              placeholder="e.g., vintage glass, collectible, antique"
-            />
-          </div>
-
-          {/* Desired Max Price */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Maximum Price ($)</label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              Only show listings at or below this price
-            </p>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.desired_price_max}
-              onChange={e => setFormData({ ...formData, desired_price_max: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-              placeholder="0.00"
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Description & Notes
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={e => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white resize-none"
+              placeholder="Describe what you're looking for, specific features, or any additional notes..."
             />
           </div>
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Status
+            </label>
             <select
               value={formData.status}
               onChange={e => setFormData({ ...formData, status: e.target.value as any })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
             >
-              <option value="active">Active</option>
+              <option value="active">Actively Looking</option>
               <option value="paused">Paused</option>
               <option value="found">Found</option>
             </select>
@@ -191,10 +639,10 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
             </button>
             <button
               type="submit"
-              disabled={loading || !formData.item_name}
+              disabled={loading || !formData.item_name || !formData.category}
               className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors font-medium"
             >
-              {loading ? 'Saving...' : (item ? 'Update Item' : 'Add Item')}
+              {loading ? 'Saving...' : (item ? 'Update Item' : 'Add to Wishlist')}
             </button>
           </div>
         </form>

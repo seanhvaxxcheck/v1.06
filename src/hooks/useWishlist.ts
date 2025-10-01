@@ -6,12 +6,18 @@ export interface WishlistItem {
   id: string;
   user_id: string;
   item_name: string;
-  ebay_search_term: string;
-  facebook_marketplace_url: string;
-  additional_search_terms?: string;
+  category: string;
+  subcategory?: string;
+  manufacturer?: string;
+  pattern?: string;
+  year_manufactured?: number;
   desired_price_max: number | null;
+  condition: string;
+  location?: string;
+  description?: string;
+  photo_url?: string | null;
+  quantity: number;
   status: 'active' | 'paused' | 'found';
-  last_checked_at: string | null;
   created_at: string;
   updated_at: string;
 }
