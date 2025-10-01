@@ -19,10 +19,6 @@ async function getEbaySessionToken(ruName: string, devId: string, appId: string,
   
   const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
 <GetSessionIDRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-  <RequesterCredentials>
-    <eBayAuthToken></eBayAuthToken>
-    <Username></Username>
-  </RequesterCredentials>
   <RuName>${ruName}</RuName>
 </GetSessionIDRequest>`;
 
@@ -80,10 +76,6 @@ async function fetchUserToken(sessionId: string, devId: string, appId: string, c
   
   const xmlRequest = `<?xml version="1.0" encoding="utf-8"?>
 <FetchTokenRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-  <RequesterCredentials>
-    <eBayAuthToken></eBayAuthToken>
-    <Username></Username>
-  </RequesterCredentials>
   <SessionID>${sessionId}</SessionID>
 </FetchTokenRequest>`;
 
