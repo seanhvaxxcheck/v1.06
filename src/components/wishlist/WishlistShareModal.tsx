@@ -27,6 +27,7 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
 
   if (!isOpen) return null;
 
@@ -42,6 +43,50 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
     setGenerating(false);
   };
 
+  const shareViaText = () => {
+    const message = `Help me find this item for my collection: ${wishlistItem.item_name}${wishlistItem.desired_price_max ? ` (Max: $${wishlistItem.desired_price_max})` : ''}\n\n${shareLink}`;
+    const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+    window.open(smsUrl, '_blank');
+  };
+
+  const shareViaEmail = () => {
+    const subject = `Help me find: ${wishlistItem.item_name}`;
+    const body = `Hi!\n\nI'm looking for this item for my collection:\n\n${wishlistItem.item_name}${wishlistItem.desired_price_max ? `\nMaximum price: $${wishlistItem.desired_price_max}` : ''}\n\nCan you help me find it? Here's the link with more details:\n${shareLink}\n\nThanks!\n\nShared via MyGlassCase`;
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoUrl, '_blank');
+  };
+
+  const shareViaFacebook = () => {
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}&quote=${encodeURIComponent(`Help me find this collectible: ${wishlistItem.item_name}`)}`;
+    window.open(facebookUrl, '_blank', 'width=600,height=400');
+  };
+
+  const shareViaTwitter = () => {
+    const tweetText = `Help me find this collectible: ${wishlistItem.item_name}${wishlistItem.desired_price_max ? ` (Max: $${wishlistItem.desired_price_max})` : ''} ${shareLink} #collectibles #antiques`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    window.open(twitterUrl, '_blank', 'width=600,height=400');
+  };
+
+  const shareViaWhatsApp = () => {
+    const message = `Help me find this item for my collection: ${wishlistItem.item_name}${wishlistItem.desired_price_max ? ` (Max: $${wishlistItem.desired_price_max})` : ''}\n\n${shareLink}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const shareViaNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Help me find: ${wishlistItem.item_name}`,
+          text: `I'm looking for this item for my collection${wishlistItem.desired_price_max ? ` (Max: $${wishlistItem.desired_price_max})` : ''}`,
+          url: shareLink,
+        });
+      } catch (error) {
+        console.log('Native share cancelled or failed:', error);
+      }
+    }
+  };
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
@@ -49,16 +94,6 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
-    }
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `Help me find: ${wishlistItem.item_name}`,
-        text: `I'm looking for this item for my collection. Can you help me find it?`,
-        url: shareLink,
-      });
     }
   };
 
@@ -175,7 +210,95 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
                 </button>
               </div>
 
-              <div className="flex gap-2">
+              {/* Share Options */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Share via:</h4>
+                
+                {/* Primary Share Actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    {copied ? 'Copied!' : 'Copy Link'}
+                  </button>
+                  
+                  {navigator.share && (
+                    <button
+                      onClick={shareViaNativeShare}
+                      className="flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                    >
+                      <Share className="h-4 w-4 mr-2" />
+                      Share
+                    </button>
+                  )}
+                </div>
+
+                {/* Communication Options */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={shareViaText}
+                    className="flex items-center justify-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-2">💬</span>
+                    Text
+                  </button>
+                  
+                  <button
+                    onClick={shareViaEmail}
+                    className="flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-2">📧</span>
+                    Email
+                  </button>
+                </div>
+
+                {/* Social Media Options */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={shareViaWhatsApp}
+                    className="flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-1">📱</span>
+                    WhatsApp
+                  </button>
+                  
+                  <button
+                    onClick={shareViaFacebook}
+                    className="flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-1">📘</span>
+                    Facebook
+                  </button>
+                  
+                  <button
+                    onClick={shareViaTwitter}
+                    className="flex items-center justify-center px-3 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-1">🐦</span>
+                    Twitter
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Info */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start">
+              <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" />
+              <div className="text-sm text-blue-700 dark:text-blue-300">
+                <p className="font-medium mb-1">Share with collectors</p>
+                <p>Other collectors can view this wishlist item and help you find it. They'll see the search terms and price range you've set.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
                 <button
                   onClick={copyToClipboard}
                   className="flex-1 flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
