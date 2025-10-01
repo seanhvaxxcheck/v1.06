@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ExternalLink, DollarSign, Calendar, Package, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Loader as Loader2 } from 'lucide-react';
 import { useEbayIntegration } from '../../hooks/useEbayIntegration';
+import { useAuth } from '../../contexts/AuthContext';
 import type { InventoryItem } from '../../hooks/useInventory';
 
 interface EbayListingModalProps {
@@ -16,6 +17,7 @@ export const EbayListingModal: React.FC<EbayListingModalProps> = ({
   onClose,
   onListingCreated,
 }) => {
+  const { user } = useAuth();
   const { 
     loading, 
     error, 
