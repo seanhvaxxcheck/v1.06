@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, Upload, Image as ImageIcon, Plus, Heart } from 'lucide-react';
+import { X, Camera, Upload, Image as ImageIcon, Plus, Heart, Share } from 'lucide-react';
 import { useWishlist, type WishlistItem } from '../../hooks/useWishlist';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -13,6 +13,7 @@ import {
   addCustomSubcategory,
   type CustomField
 } from '../../utils/customFields';
+import { WishlistShareModal } from './WishlistShareModal';
 
 interface WishlistModalProps {
   item?: WishlistItem | null;
@@ -50,6 +51,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newConditionName, setNewConditionName] = useState('');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -783,6 +785,21 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
             </div>
           </div>
         </div>
+      )}
+
+      {/* Share Modal */}
+      {shareModalOpen && item && (
+        <WishlistShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          wishlistItem={{
+            id: item.id,
+            item_name: item.item_name,
+            ebay_search_term: formData.ebay_search_term || '',
+            facebook_marketplace_url: formData.facebook_marketplace_url || '',
+            desired_price_max: formData.desired_price_max ? Number(formData.desired_price_max) : null,
+          }}
+        />
       )}
       </div>
     </div>
