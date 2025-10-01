@@ -29,7 +29,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navigation = [
     { name: 'Home', id: 'dashboard', icon: Home },
     { name: 'Collection', id: 'inventory', icon: Package },
-    { name: 'AI Recognition', id: 'recognition', icon: Sparkles },
+    { name: 'AI Recognition', id: 'recognition', icon: Sparkles, hidden: true },
     // TODO: WISHLIST FEATURE - Uncomment the line below to reactivate wishlist
     // { name: 'Wishlist', id: 'wishlist', icon: Heart },
     { name: 'Wishlist', id: 'wishlist-coming-soon', icon: Heart, disabled: true },
@@ -70,7 +70,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-1">
-                {navigation.map((item) => (
+                {navigation.filter(item => !item.hidden).map((item) => (
                   <button
                     key={item.id}
                     onClick={() => onPageChange(item.id)}
@@ -238,7 +238,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 safe-area-pb">
         <div className="flex items-center justify-around py-2">
-          {navigation.map((item) => (
+          {navigation.filter(item => !item.hidden).map((item) => (
             <button
               key={item.id}
               onClick={() => {
