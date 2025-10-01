@@ -183,7 +183,14 @@ export const useEbayIntegration = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to list item on eBay');
+        let errorMessage = errorData.error || 'Failed to list item on eBay';
+        
+        // Handle specific eBay error codes with user-friendly messages
+        if (errorMessage.includes('Code: 21917236')) {
+          errorMessage = "Your eBay account has restrictions that prevent listing items at this time. This typically happens with new seller accounts or accounts with payment holds. Please check your eBay account settings or contact eBay support to resolve this issue before listing items.";
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
