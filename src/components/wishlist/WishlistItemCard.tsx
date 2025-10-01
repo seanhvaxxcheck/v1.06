@@ -1,18 +1,5 @@
 import React from 'react';
-import { 
-  Search, 
-  ExternalLink, 
-  DollarSign, 
-  Calendar, 
-  CheckCircle, 
-  Edit, 
-  Trash2, 
-  Share, 
-  Play, 
-  Pause,
-  Globe,
-  Facebook
-} from 'lucide-react';
+import { Search, ExternalLink, DollarSign, Calendar, CircleCheck as CheckCircle, CreditCard as Edit, Trash2, Share, Play, Pause, Globe, Facebook } from 'lucide-react';
 import { format } from 'date-fns';
 import type { WishlistItem, FoundListing } from '../../hooks/useWishlist';
 

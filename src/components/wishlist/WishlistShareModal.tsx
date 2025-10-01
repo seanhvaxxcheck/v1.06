@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Share, Copy, CheckCircle, ExternalLink, Globe, Eye, EyeOff } from 'lucide-react';
+import { X, Share, Copy, CircleCheck as CheckCircle, ExternalLink, Globe, Eye, EyeOff } from 'lucide-react';
 
 interface WishlistShareModalProps {
   isOpen: boolean;

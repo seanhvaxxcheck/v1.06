@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import { X, CircleAlert as AlertCircle } from 'lucide-react';
 import { useWishlist, type WishlistItem } from '../../hooks/useWishlist';
 
 interface WishlistModalProps {
