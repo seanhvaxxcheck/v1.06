@@ -222,7 +222,10 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                   className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group break-inside-avoid mb-4"
                 >
                   {/* Image */}
-                  <div className="relative aspect-[4/5] bg-gray-100 dark:bg-gray-700">
+                  <div 
+                    className="relative aspect-[4/5] bg-gray-100 dark:bg-gray-700 cursor-pointer"
+                    onClick={() => handleEdit(item)}
+                  >
                     <OptimizedImage
                       src={item.photo_url}
                       alt={item.item_name}
@@ -240,26 +243,13 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                         {item.status === 'active' ? 'Looking' : item.status === 'paused' ? 'Paused' : 'Found'}
                       </span>
                     </div>
-
-                    {/* Action buttons overlay */}
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-1">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all"
-                      >
-                        <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </button>
-                    </div>
                   </div>
 
                   {/* Content */}
-                  <div className="p-4">
+                  <div 
+                    className="p-4 cursor-pointer"
+                    onClick={() => handleEdit(item)}
+                  >
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                       {item.item_name}
                     </h3>
