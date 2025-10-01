@@ -18,7 +18,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
   const { user } = useAuth();
   const { getSubscription } = useStripe();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'found'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'found'>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<WishlistItem | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -91,7 +91,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
   };
 
   const handleToggleStatus = async (item: WishlistItem) => {
-    const newStatus = item.status === 'active' ? 'paused' : 'active';
+    const newStatus = item.status === 'active' ?  : 'active';
     await updateItem(item.id, { status: newStatus });
   };
 
@@ -146,7 +146,6 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
             >
               <option value="all">All Status</option>
               <option value="active">Actively Looking</option>
-              <option value="paused">Paused</option>
               <option value="found">Found</option>
             </select>
 
@@ -237,10 +236,9 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                     <div className="absolute top-3 left-3">
                       <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
                         item.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200' :
-                        item.status === 'paused' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' :
                         'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
                       }`}>
-                        {item.status === 'active' ? 'Looking' : item.status === 'paused' ? 'Paused' : 'Found'}
+                        {item.status === 'active' ? 'Looking' : 'Found'}
                       </span>
                     </div>
                   </div>
