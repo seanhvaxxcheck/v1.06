@@ -16,6 +16,7 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
     facebook_marketplace_url: item?.facebook_marketplace_url || '',
     desired_price_max: item?.desired_price_max || '',
     status: (item?.status as any) || 'active',
+    additional_search_terms: item?.additional_search_terms || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

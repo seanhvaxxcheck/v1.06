@@ -145,6 +145,7 @@ export type Database = {
           last_checked_at: string | null;
           created_at: string;
           updated_at: string;
+          additional_search_terms: string | null;
         };
         Insert: {
           id?: string;
@@ -157,6 +158,7 @@ export type Database = {
           last_checked_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          additional_search_terms?: string | null;
         };
         Update: {
           id?: string;
@@ -169,6 +171,7 @@ export type Database = {
           last_checked_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          additional_search_terms?: string | null;
         };
       };
       found_listings: {
