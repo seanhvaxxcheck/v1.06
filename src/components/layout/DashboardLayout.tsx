@@ -30,9 +30,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { name: 'Home', id: 'dashboard', icon: Home },
     { name: 'Collection', id: 'inventory', icon: Package },
     { name: 'AI Recognition', id: 'recognition', icon: Sparkles, hidden: true },
-    // TODO: WISHLIST FEATURE - Uncomment the line below to reactivate wishlist
-    // { name: 'Wishlist', id: 'wishlist', icon: Heart },
-    { name: 'Wishlist', id: 'wishlist-coming-soon', icon: Heart, disabled: true },
+    { name: 'Wishlist', id: 'wishlist', icon: Heart },
     { name: 'Settings', id: 'settings', icon: Settings },
   ];
 
@@ -242,15 +240,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <button
               key={item.id}
               onClick={() => {
-                // TODO: WISHLIST FEATURE - Remove this condition to reactivate wishlist
-                if (item.id === 'wishlist-coming-soon') {
-                  alert('Wishlist feature coming soon! We\'re working hard to bring you this exciting feature.');
-                  return;
-                }
                 onPageChange(item.id);
               }}
               className={`flex flex-col items-center justify-center p-3 min-w-0 flex-1 transition-colors ${
-                currentPage === item.id || (currentPage === 'wishlist' && item.id === 'wishlist-coming-soon')
+                currentPage === item.id
                   ? 'text-green-600 dark:text-green-400'
                   : item.disabled
                   ? 'text-gray-400 dark:text-gray-500'
@@ -259,18 +252,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               disabled={item.disabled}
             >
               <item.icon className={`h-6 w-6 mb-1 ${
-                currentPage === item.id || (currentPage === 'wishlist' && item.id === 'wishlist-coming-soon') ? 'text-green-600 dark:text-green-400' : ''
+                currentPage === item.id ? 'text-green-600 dark:text-green-400' : ''
               }`} />
               <span className={`text-xs font-medium truncate ${
-                currentPage === item.id || (currentPage === 'wishlist' && item.id === 'wishlist-coming-soon') ? 'text-green-600 dark:text-green-400' : ''
+                currentPage === item.id ? 'text-green-600 dark:text-green-400' : ''
               }`}>
                 {item.name}
               </span>
-              {item.disabled && (
-                <span className="text-xs text-yellow-500 dark:text-yellow-400">
-                  Soon
-                </span>
-              )}
             </button>
           ))}
         </div>

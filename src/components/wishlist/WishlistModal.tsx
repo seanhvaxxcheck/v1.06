@@ -107,6 +107,9 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
           {/* eBay Search Term */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">eBay Search Term</label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Keywords to search for on eBay (e.g., "fenton hobnail milk glass vase")
+            </p>
             <input
               type="text"
               value={formData.ebay_search_term}
@@ -119,6 +122,9 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
           {/* Facebook Marketplace URL */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Facebook Marketplace URL</label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Direct link to a Facebook Marketplace search or specific listing
+            </p>
             <input
               type="url"
               value={formData.facebook_marketplace_url}
@@ -128,9 +134,27 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
             />
           </div>
 
+          {/* Additional Search Platforms */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Search Terms</label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Alternative keywords for broader search coverage
+            </p>
+            <input
+              type="text"
+              value={formData.additional_search_terms || ''}
+              onChange={e => setFormData({ ...formData, additional_search_terms: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+              placeholder="e.g., vintage glass, collectible, antique"
+            />
+          </div>
+
           {/* Desired Max Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Maximum Price ($)</label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Only show listings at or below this price
+            </p>
             <input
               type="number"
               step="0.01"

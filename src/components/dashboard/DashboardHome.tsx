@@ -588,8 +588,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onPageChange, subs
 
             <button
               onClick={() => {
-                // TODO: WISHLIST FEATURE - Change back to onPageChange('wishlist') to reactivate
-                // Wishlist button disabled - no action
+                onPageChange && onPageChange('wishlist');
               }}
               className="flex flex-col items-center p-6 bg-purple-50 dark:bg-purple-900/10 rounded-2xl hover:bg-purple-100 dark:hover:bg-purple-900/20 transition-colors group"
             >
@@ -598,12 +597,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onPageChange, subs
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                 Wishlist
-                <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full">
-                  Coming Soon
-                </span>
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Track items you want (coming soon!)
+                Track items you want to find
               </p>
             </button>
           </div>

@@ -14,10 +14,12 @@ import {
   CheckCircle,
   X,
   Trash,
-  Eye
+  Eye,
+  Share
 } from 'lucide-react';
 import { useWishlist, type WishlistItem } from '../../hooks/useWishlist';
 import { WishlistModal } from './WishlistModal';
+import { WishlistShareModal } from './WishlistShareModal';
 import { format } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStripe } from '../../hooks/useStripe';
@@ -44,6 +46,8 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
   const [subscription, setSubscription] = useState<any>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState('');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [itemToShare, setItemToShare] = useState<WishlistItem | null>(null);
 
   // Check subscription status
   React.useEffect(() => {
@@ -357,7 +361,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                 ) : (
                   <div className="text-center">
                     <p className="text-gray-500 dark:text-gray-400 mb-4">
-                      Wishlist feature is available for Pro and Collector subscribers only.
+                      Wishlist feature requires a Pro or Collector subscription.
                     </p>
                     <button
                       onClick={() => {
@@ -373,7 +377,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
               </div>
             </div>
           ) : (
-            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+            <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
               {filteredItems.map((item) => {
                 const itemListings = getItemFoundListings(item.id);
                 const isSearching = searchingItems.has(item.id);
@@ -381,13 +385,13 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group break-inside-avoid mb-6"
+                    className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group break-inside-avoid mb-4"
                   >
-                    <div className="p-6">
+                    <div className="p-4">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
                             {item.item_name}
                           </h3>
                           <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
@@ -400,6 +404,24 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                         </div>
                         
                         <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => {
+                              setItemToShare(item);
+                              setShareModalOpen(true);
+                            }}
+                            className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                          >
+                            <Share className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setItemToShare(item);
+                              setShareModalOpen(true);
+                            }}
+                            className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                          >
+                            <Share className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => handleEdit(item)}
                             className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -415,31 +437,44 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                         </div>
                       </div>
 
-                      {/* Details */}
-                      <div className="space-y-3 mb-4">
+                      {/* Search Platforms */}
+                      <div className="space-y-2 mb-4">
                         {item.ebay_search_term && (
                           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                            <Search className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span className="truncate">eBay: "{item.ebay_search_term}"</span>
+                            <div className="w-4 h-4 bg-blue-500 rounded-sm flex items-center justify-center mr-2 flex-shrink-0">
+                              <span className="text-white text-xs font-bold">e</span>
+                            </div>
+                            <span className="truncate">"{item.ebay_search_term}"</span>
                           </div>
                         )}
+                        
                         {item.facebook_marketplace_url && (
                           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                            <ExternalLink className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <div className="w-4 h-4 bg-blue-600 rounded-sm flex items-center justify-center mr-2 flex-shrink-0">
+                              <span className="text-white text-xs font-bold">f</span>
+                            </div>
                             <a 
                               href={item.facebook_marketplace_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-red-500 hover:text-red-600 truncate"
+                              className="text-blue-500 hover:text-blue-600 truncate"
                             >
                               Facebook Marketplace
                             </a>
                           </div>
                         )}
+                        
+                        {item.additional_search_terms && (
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <Globe className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">"{item.additional_search_terms}"</span>
+                          </div>
+                        )}
+                        
                         {item.desired_price_max && (
                           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                             <DollarSign className="h-4 w-4 mr-2 flex-shrink-0" />
-                            <span>Max price: ${item.desired_price_max}</span>
+                            <span>Max: ${item.desired_price_max}</span>
                           </div>
                         )}
                       </div>
@@ -460,7 +495,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                       {item.last_checked_at && (
                         <div className="mb-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
-                          Last checked: {format(new Date(item.last_checked_at), 'MMM dd, yyyy HH:mm')}
+                          Last checked: {format(new Date(item.last_checked_at), 'MMM dd, HH:mm')}
                         </div>
                       )}
 
@@ -469,22 +504,22 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
                         <div className="flex items-center space-x-2">
                           {item.ebay_search_term && (
                             <button
-                              onClick={() => handleManualSearch(item)}
+                              onClick={() => onManualSearch(item)}
                               disabled={isSearching}
-                              className="flex items-center px-4 py-2 text-sm bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white rounded-full transition-colors font-medium"
+                              className="flex items-center px-3 py-1.5 text-xs bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white rounded-full transition-colors font-medium"
                             >
                               {isSearching ? (
-                                <div className="h-3 w-3 border border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                <div className="h-3 w-3 border border-white border-t-transparent rounded-full animate-spin mr-1" />
                               ) : (
-                                <Search className="h-3 w-3 mr-2" />
+                                <Search className="h-3 w-3 mr-1" />
                               )}
-                              {isSearching ? 'Searching...' : 'Search now'}
+                              {isSearching ? 'Searching...' : 'Search'}
                             </button>
                           )}
                           
                           <button
-                            onClick={() => handleToggleStatus(item)}
-                            className={`flex items-center px-4 py-2 text-sm rounded-full transition-colors font-medium ${
+                            onClick={() => onToggleStatus(item)}
+                            className={`flex items-center px-3 py-1.5 text-xs rounded-full transition-colors font-medium ${
                               item.status === 'active' 
                                 ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
                                 : 'bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-green-300'
@@ -599,6 +634,17 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
           onSaved={async () => {
             await refreshWishlist();
           }}
+        />
+      )}
+
+      {shareModalOpen && itemToShare && (
+        <WishlistShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setItemToShare(null);
+          }}
+          wishlistItem={itemToShare}
         />
       )}
 

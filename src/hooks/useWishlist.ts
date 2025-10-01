@@ -8,6 +8,7 @@ export interface WishlistItem {
   item_name: string;
   ebay_search_term: string;
   facebook_marketplace_url: string;
+  additional_search_terms?: string;
   desired_price_max: number | null;
   status: 'active' | 'paused' | 'found';
   last_checked_at: string | null;
@@ -276,7 +277,7 @@ export const useWishlist = () => {
 
   const triggerEbaySearch = async (itemId: string) => {
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ebay-monitor`;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wishlist-search`;
       
       const headers = {
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -287,13 +288,14 @@ export const useWishlist = () => {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          wishlistItemId: itemId
+          wishlistItemId: itemId,
+          platforms: ['ebay', 'facebook', 'mercari', 'etsy']
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to trigger eBay search');
+        throw new Error(errorData.error || 'Failed to trigger wishlist search');
       }
 
       const data = await response.json();
@@ -303,7 +305,7 @@ export const useWishlist = () => {
       
       return { data, error: null };
     } catch (err: any) {
-      console.error('eBay search error:', err);
+      console.error('Wishlist search error:', err);
       return { data: null, error: err.message };
     }
   };
