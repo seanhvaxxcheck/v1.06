@@ -413,8 +413,40 @@ export const WishlistModal: React.FC<WishlistModalProps> = ({ item, onClose, onS
                   <option key={subcategory.id} value={subcategory.name}>
                     {subcategory.name}
                   </option>
+                <option value="__add_new__">+ Add New Condition</option>
                 ))}
                 <option value="__add_new__">+ Add New Subcategory</option>
+              {showAddCondition && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 p-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newConditionName}
+                      onChange={(e) => setNewConditionName(e.target.value)}
+                      placeholder="Enter condition name"
+                      className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-700 dark:text-white"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddCondition()}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCondition}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddCondition(false);
+                        setNewConditionName('');
+                      }}
+                      className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               </select>
 
               {showAddSubcategory && (
