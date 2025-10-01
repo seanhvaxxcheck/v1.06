@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Heart, Search, DollarSign, ExternalLink, ArrowLeft, Globe, Calendar } from 'lucide-react';
+import { Heart, Search, DollarSign, ExternalLink, ArrowLeft, Globe, Calendar, MapPin, Package } from 'lucide-react';
 import { format } from 'date-fns';
+import { OptimizedImage } from '../inventory/OptimizedImage';
 
 interface SharedWishlistItem {
   id: string;
   item_name: string;
-  ebay_search_term?: string;
-  facebook_marketplace_url?: string;
-  additional_search_terms?: string;
+  category: string;
+  subcategory?: string;
+  manufacturer?: string;
+  pattern?: string;
+  year_manufactured?: number;
   desired_price_max?: number;
+  condition: string;
+  location?: string;
+  description?: string;
+  photo_url?: string;
+  quantity: number;
   status: string;
   created_at: string;
-  share_settings: {
-    include_search_terms?: boolean;
-    include_price_limit?: boolean;
-    include_facebook_url?: boolean;
-  };
   owner_name: string;
 }
 
@@ -35,29 +38,25 @@ export const PublicWishlistView: React.FC = () => {
       }
 
       try {
-        // This would call a Supabase function to get the shared wishlist item
-        // For now, we'll simulate the data
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/share-wishlist?itemId=${shareId}`;
         
-        // Mock data - in production this would come from the API
-        const mockItem: SharedWishlistItem = {
-          id: shareId,
-          item_name: 'Fenton Hobnail Milk Glass Vase',
-          ebay_search_term: 'fenton hobnail milk glass vase',
-          additional_search_terms: 'vintage glass vase collectible',
-          desired_price_max: 75,
-          status: 'active',
-          created_at: new Date().toISOString(),
-          share_settings: {
-            include_search_terms: true,
-            include_price_limit: true,
-            include_facebook_url: false,
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
           },
-          owner_name: 'Sarah Johnson',
-        };
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to load wishlist item');
+        }
+
+        const data = await response.json();
+        setWishlistItem(data.wishlistItem);
         
-        setWishlistItem(mockItem);
-        document.title = `Help find: ${mockItem.item_name} - MyGlassCase`;
+        document.title = `Help find: ${data.wishlistItem.item_name} - MyGlassCase`;
       } catch (err: any) {
         console.error('Error fetching shared wishlist item:', err);
         setError(err.message);
@@ -133,89 +132,88 @@ export const PublicWishlistView: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Wishlist Item Card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-8">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              {wishlistItem.item_name}
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              {wishlistItem.owner_name} is looking for this collectible
-            </p>
-          </div>
-
-          {/* Search Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Search Details</h3>
-              <div className="space-y-3">
-                {wishlistItem.share_settings.include_search_terms && wishlistItem.ebay_search_term && (
-                  <div className="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="w-6 h-6 bg-blue-500 rounded-sm flex items-center justify-center mr-3">
-                      <span className="text-white text-xs font-bold">e</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">eBay Search</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">"{wishlistItem.ebay_search_term}"</p>
-                    </div>
-                  </div>
-                )}
-
-                {wishlistItem.share_settings.include_search_terms && wishlistItem.additional_search_terms && (
-                  <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <Globe className="h-5 w-5 text-gray-600 dark:text-gray-400 mr-3" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Additional Terms</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">"{wishlistItem.additional_search_terms}"</p>
-                    </div>
-                  </div>
-                )}
-
-                {wishlistItem.share_settings.include_facebook_url && wishlistItem.facebook_marketplace_url && (
-                  <div className="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="w-6 h-6 bg-blue-600 rounded-sm flex items-center justify-center mr-3">
-                      <span className="text-white text-xs font-bold">f</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Facebook Marketplace</p>
-                      <a 
-                        href={wishlistItem.facebook_marketplace_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-500 flex items-center"
-                      >
-                        View search <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </div>
-                  </div>
-                )}
+          <div className="flex flex-col lg:flex-row gap-8 mb-8">
+            {/* Item Photo */}
+            <div className="lg:w-1/3">
+              <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden">
+                <OptimizedImage
+                  src={wishlistItem.photo_url}
+                  alt={wishlistItem.item_name}
+                  className="w-full h-full"
+                  fallbackIcon={<Heart className="h-12 w-12 text-purple-400" />}
+                />
               </div>
             </div>
+            
+            {/* Item Details */}
+            <div className="lg:w-2/3">
+              <div className="text-center lg:text-left mb-6">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {wishlistItem.item_name}
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400">
+                  {wishlistItem.owner_name} is looking for this collectible
+                </p>
+              </div>
 
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Preferences</h3>
-              <div className="space-y-3">
-                {wishlistItem.share_settings.include_price_limit && wishlistItem.desired_price_max && (
-                  <div className="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Maximum Price</p>
-                      <p className="text-lg font-bold text-green-600 dark:text-green-400">${wishlistItem.desired_price_max}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Added to Wishlist</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {format(new Date(wishlistItem.created_at), 'MMMM dd, yyyy')}
-                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Category</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{wishlistItem.category}</p>
                   </div>
+                  {wishlistItem.manufacturer && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Manufacturer</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{wishlistItem.manufacturer}</p>
+                    </div>
+                  )}
+                  {wishlistItem.pattern && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Pattern</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{wishlistItem.pattern}</p>
+                    </div>
+                  )}
+                  {wishlistItem.year_manufactured && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Year</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{wishlistItem.year_manufactured}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-3">
+                  {wishlistItem.desired_price_max && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Maximum Price</p>
+                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        ${wishlistItem.desired_price_max}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Condition Wanted</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{wishlistItem.condition}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Quantity Wanted</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{wishlistItem.quantity}</p>
+                  </div>
+                  {wishlistItem.location && (
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Preferred Source</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{wishlistItem.location}</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {wishlistItem.description && (
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description & Notes</h4>
+                  <p className="text-gray-600 dark:text-gray-400">{wishlistItem.description}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -286,21 +284,19 @@ export const PublicWishlistView: React.FC = () => {
             Quick Search Links
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {wishlistItem.ebay_search_term && (
-              <a
-                href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(wishlistItem.ebay_search_term)}&LH_Sold=0&LH_Complete=0`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center p-4 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors border border-blue-200 dark:border-blue-800"
-              >
-                <div className="text-center">
-                  <div className="w-8 h-8 bg-blue-500 rounded-sm flex items-center justify-center mx-auto mb-2">
-                    <span className="text-white font-bold">e</span>
-                  </div>
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Search eBay</span>
+            <a
+              href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(`${wishlistItem.manufacturer || ''} ${wishlistItem.item_name} ${wishlistItem.pattern || ''}`.trim())}&LH_Sold=0&LH_Complete=0`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center p-4 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors border border-blue-200 dark:border-blue-800"
+            >
+              <div className="text-center">
+                <div className="w-8 h-8 bg-blue-500 rounded-sm flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white font-bold">e</span>
                 </div>
-              </a>
-            )}
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Search eBay</span>
+              </div>
+            </a>
 
             <a
               href={`https://www.facebook.com/marketplace/search/?query=${encodeURIComponent(wishlistItem.item_name)}`}
@@ -317,7 +313,7 @@ export const PublicWishlistView: React.FC = () => {
             </a>
 
             <a
-              href={`https://www.mercari.com/search/?keyword=${encodeURIComponent(wishlistItem.item_name)}`}
+              href={`https://www.mercari.com/search/?keyword=${encodeURIComponent(`${wishlistItem.manufacturer || ''} ${wishlistItem.item_name}`.trim())}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors border border-red-200 dark:border-red-800"
@@ -331,7 +327,7 @@ export const PublicWishlistView: React.FC = () => {
             </a>
 
             <a
-              href={`https://www.etsy.com/search?q=${encodeURIComponent(wishlistItem.item_name)}`}
+              href={`https://www.etsy.com/search?q=${encodeURIComponent(`${wishlistItem.manufacturer || ''} ${wishlistItem.item_name} ${wishlistItem.pattern || ''}`.trim())}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center p-4 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg transition-colors border border-orange-200 dark:border-orange-800"

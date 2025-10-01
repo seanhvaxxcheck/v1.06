@@ -27,10 +27,9 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
   const generateShareLink = async () => {
     setGenerating(true);
     
-    // Simulate API call to create share link tied to this specific item
+    // Generate a link that's tied to this specific wishlist item
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Generate a link that's tied to this specific wishlist item
     const link = `${window.location.origin}/wishlist/share/${wishlistItem.id}`;
     setShareLink(link);
     setGenerating(false);
@@ -115,11 +114,14 @@ export const WishlistShareModal: React.FC<WishlistShareModalProps> = ({
               {wishlistItem.item_name}
             </h3>
             <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              {wishlistItem.ebay_search_term && (
-                <p>eBay search: "{wishlistItem.ebay_search_term}"</p>
-              )}
               {wishlistItem.desired_price_max && (
                 <p>Max price: ${wishlistItem.desired_price_max}</p>
+              )}
+              {wishlistItem.manufacturer && (
+                <p>Manufacturer: {wishlistItem.manufacturer}</p>
+              )}
+              {wishlistItem.pattern && (
+                <p>Pattern: {wishlistItem.pattern}</p>
               )}
             </div>
           </div>
