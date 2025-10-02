@@ -31,7 +31,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navigation = [
     { name: 'Home', id: 'dashboard', icon: Home },
     { name: 'Collection', id: 'inventory', icon: Package },
-    { name: 'Marketplace', id: 'marketplace', icon: ShoppingBag },
+    { name: 'The Exchange', id: 'marketplace', icon: ShoppingBag },
     { name: 'Messages', id: 'messages', icon: MessageCircle, badge: unreadCount },
     { name: 'AI Recognition', id: 'recognition', icon: Sparkles, hidden: true },
     { name: 'Wishlist', id: 'wishlist', icon: Heart },
