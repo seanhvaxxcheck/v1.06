@@ -119,7 +119,7 @@ export const PublicWishlistView: React.FC = () => {
                 className="h-8 w-8 mr-3"
               />
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Look at {wishlistItem.owner_name}s Wishlist!
+                Look at {wishlistItem.owner_name}'s Wishlist Item!
               </h1>
             </div>
             <p className="text-lg text-gray-600 dark:text-gray-400">
