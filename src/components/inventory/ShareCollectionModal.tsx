@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Share, Copy, CircleCheck as CheckCircle, ExternalLink, Globe } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ShareCollectionModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { session } = useAuth();
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -32,7 +34,7 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${session?.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
