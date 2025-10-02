@@ -6,10 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-interface ShareCollectionRequest {
-  shareId: string;
-}
-
 Deno.serve(async (req: Request) => {
   try {
     if (req.method === "OPTIONS") {
@@ -43,35 +39,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Initialize Supabase client with service role key for public access
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Fetching share link for ID:', shareId);
-
-    // Get the share link details
+    // Get the share link from database
     const { data: shareLink, error: shareLinkError } = await supabase
       .from('share_links')
-      .select(`
-        id,
-        user_id,
-        settings,
-        is_active,
-        expires_at,
-        created_at,
-        profiles!inner(
-          full_name,
-          email
-        )
-      `)
+      .select('user_id, settings, expires_at, is_active, created_at')
       .eq('unique_share_id', shareId)
-      .eq('is_active', true)
       .single();
 
     if (shareLinkError || !shareLink) {
-      console.error('Share link not found or inactive:', shareLinkError);
+      console.error('Share link not found:', shareLinkError);
       return new Response(
         JSON.stringify({ error: "Share link not found or has been disabled" }),
         {
@@ -81,10 +63,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Check if link has expired
-    if (shareLink.expires_at && new Date(shareLink.expires_at) < new Date()) {
+    // Check if link is active and not expired
+    if (!shareLink.is_active || (shareLink.expires_at && new Date(shareLink.expires_at) < new Date())) {
       return new Response(
-        JSON.stringify({ error: "Share link has expired" }),
+        JSON.stringify({ error: "Share link has expired or been disabled" }),
         {
           status: 410,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -92,18 +74,50 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log('Found valid share link for user:', shareLink.user_id);
+    // Get user profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', shareLink.user_id)
+      .single();
 
-    // Get the user's collection items (only active items)
+    if (profileError || !profile) {
+      console.error('Profile not found:', profileError);
+      return new Response(
+        JSON.stringify({ error: "User profile not found" }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Get inventory items for the user
     const { data: items, error: itemsError } = await supabase
       .from('inventory_items')
-      .select('*')
+      .select(`
+        id,
+        name,
+        category,
+        subcategory,
+        manufacturer,
+        pattern,
+        year_manufactured,
+        current_value,
+        purchase_price,
+        purchase_date,
+        condition,
+        location,
+        description,
+        photo_url,
+        quantity,
+        created_at
+      `)
       .eq('user_id', shareLink.user_id)
-      .or('deleted.is.null,deleted.eq.0')
       .order('created_at', { ascending: false });
 
     if (itemsError) {
-      console.error('Error fetching collection items:', itemsError);
+      console.error('Error fetching items:', itemsError);
       return new Response(
         JSON.stringify({ error: "Failed to fetch collection items" }),
         {
@@ -113,71 +127,35 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Filter out sensitive information based on share settings
-    const settings = shareLink.settings || {};
-    const filteredItems = (items || []).map(item => {
-      const filteredItem: any = {
-        id: item.id,
-        name: item.name,
-        category: item.category,
-        subcategory: item.subcategory,
-        manufacturer: item.manufacturer,
-        pattern: item.pattern,
-        year_manufactured: item.year_manufactured,
-        current_value: item.current_value,
-        condition: item.condition,
-        photo_url: item.photo_url,
-        quantity: item.quantity,
-        created_at: item.created_at,
-      };
+    // Calculate stats
+    const totalItems = items?.length || 0;
+    const totalValue = items?.reduce((sum, item) => sum + (item.current_value || 0), 0) || 0;
+    const categories = [...new Set(items?.map(item => item.category).filter(Boolean))] || [];
+    const manufacturers = [...new Set(items?.map(item => item.manufacturer).filter(Boolean))] || [];
+    
+    const years = items?.map(item => item.year_manufactured).filter(Boolean) || [];
+    const oldestYear = years.length > 0 ? Math.min(...years) : 0;
+    const newestYear = years.length > 0 ? Math.max(...years) : 0;
 
-      // Conditionally include fields based on settings
-      if (!settings.hide_purchase_price) {
-        filteredItem.purchase_price = item.purchase_price;
-      }
-      
-      if (!settings.hide_purchase_date) {
-        filteredItem.purchase_date = item.purchase_date;
-      }
-      
-      if (!settings.hide_location) {
-        filteredItem.location = item.location;
-      }
-      
-      if (!settings.hide_description) {
-        filteredItem.description = item.description;
-      }
-
-      return filteredItem;
-    });
-
-    // Calculate collection stats (excluding sensitive data)
-    const stats = {
-      totalItems: filteredItems.reduce((sum, item) => sum + (item.quantity || 1), 0),
-      totalValue: filteredItems.reduce((sum, item) => sum + ((item.current_value || 0) * (item.quantity || 1)), 0),
-      categories: [...new Set(filteredItems.map(item => item.category))].filter(Boolean),
-      manufacturers: [...new Set(filteredItems.map(item => item.manufacturer))].filter(Boolean),
-      oldestYear: Math.min(...filteredItems.map(item => item.year_manufactured).filter(Boolean)),
-      newestYear: Math.max(...filteredItems.map(item => item.year_manufactured).filter(Boolean)),
+    const collection = {
+      owner: {
+        name: profile.full_name || profile.email.split('@')[0] || 'Anonymous Collector'
+      },
+      items: items || [],
+      stats: {
+        totalItems,
+        totalValue,
+        categories,
+        manufacturers,
+        oldestYear: oldestYear || Infinity,
+        newestYear: newestYear || 0
+      },
+      settings: shareLink.settings || {},
+      sharedAt: shareLink.created_at
     };
-
-    const response = {
-      collection: {
-        owner: {
-          name: shareLink.profiles.full_name || 'Anonymous Collector',
-          // Don't include email for privacy
-        },
-        items: filteredItems,
-        stats,
-        settings: settings,
-        sharedAt: shareLink.created_at,
-      }
-    };
-
-    console.log(`Successfully fetched ${filteredItems.length} items for share link`);
 
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({ collection }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -189,7 +167,7 @@ Deno.serve(async (req: Request) => {
     
     return new Response(
       JSON.stringify({ 
-        error: "Failed to fetch shared collection",
+        error: "Failed to load shared collection",
         details: error.message 
       }),
       {
