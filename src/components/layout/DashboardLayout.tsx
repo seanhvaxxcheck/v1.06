@@ -244,14 +244,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 safe-area-pb">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-1 px-1">
           {navigation.filter(item => !item.hidden).map((item) => (
             <button
               key={item.id}
               onClick={() => {
                 onPageChange(item.id);
               }}
-              className={`flex flex-col items-center justify-center p-3 min-w-0 flex-1 transition-colors ${
+              className={`flex flex-col items-center justify-center py-2 px-1 min-w-0 flex-1 transition-colors ${
                 currentPage === item.id
                   ? 'text-green-600 dark:text-green-400'
                   : item.disabled
@@ -260,13 +260,20 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               }`}
               disabled={item.disabled}
             >
-              <item.icon className={`h-6 w-6 mb-1 ${
-                currentPage === item.id ? 'text-green-600 dark:text-green-400' : ''
-              }`} />
-              <span className={`text-xs font-medium truncate ${
+              <div className="relative">
+                <item.icon className={`h-5 w-5 mb-0.5 ${
+                  currentPage === item.id ? 'text-green-600 dark:text-green-400' : ''
+                }`} />
+                {item.badge && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 min-w-[16px] h-4 rounded-full text-[10px] font-bold bg-green-500 text-white">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
+              </div>
+              <span className={`text-[10px] font-medium leading-tight max-w-full overflow-hidden text-ellipsis whitespace-nowrap ${
                 currentPage === item.id ? 'text-green-600 dark:text-green-400' : ''
               }`}>
-                {item.name}
+                {item.name === 'The Exchange' ? 'Exchange' : item.name}
               </span>
             </button>
           ))}
