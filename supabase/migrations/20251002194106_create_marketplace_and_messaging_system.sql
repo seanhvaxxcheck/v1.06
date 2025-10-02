@@ -1,5 +1,5 @@
 /*
-  # Community Marketplace and Real-Time Messaging System
+  # The Exchange and Real-Time Messaging System
 
   ## Overview
   Creates an internal community marketplace where authenticated users can list items for sale or trade,
