@@ -98,7 +98,15 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Listed by</p>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {listing.user_profile?.full_name || listing.user_profile?.email}
+                        {listing.user_profile?.full_name ? (() => {
+                          const nameParts = listing.user_profile.full_name.trim().split(/\s+/);
+                          if (nameParts.length >= 2) {
+                            const firstName = nameParts[0];
+                            const lastInitial = nameParts[nameParts.length - 1][0];
+                            return `${firstName} ${lastInitial}.`;
+                          }
+                          return listing.user_profile.full_name;
+                        })() : listing.user_profile?.email}
                       </p>
                     </div>
                   </div>
@@ -135,7 +143,12 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
 
               {!isOwnListing && (
                 <button
-                  onClick={() => onContact(listing)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Contact Seller button clicked in modal');
+                    onContact(listing);
+                  }}
                   className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-medium transition-colors flex items-center justify-center space-x-2"
                 >
                   <MessageCircle className="h-5 w-5" />
