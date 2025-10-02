@@ -39,6 +39,9 @@ export const MarketplacePage: React.FC = () => {
       ? listings.filter(listing => listing.user_id === user?.id)
       : listings.filter(listing => listing.user_id !== user?.id);
 
+    console.log('Filtering - viewMode:', viewMode, 'initial count:', filtered.length);
+    console.log('Filters - type:', listingTypeFilter, 'category:', categoryFilter, 'condition:', conditionFilter);
+
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -52,14 +55,17 @@ export const MarketplacePage: React.FC = () => {
 
     if (listingTypeFilter !== 'all') {
       filtered = filtered.filter(l => l.listing_type === listingTypeFilter);
+      console.log('After type filter:', filtered.length);
     }
 
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(l => l.category === categoryFilter);
+      filtered = filtered.filter(l => l.category && l.category === categoryFilter);
+      console.log('After category filter:', filtered.length);
     }
 
     if (conditionFilter !== 'all') {
-      filtered = filtered.filter(l => l.condition === conditionFilter);
+      filtered = filtered.filter(l => l.condition && l.condition === conditionFilter);
+      console.log('After condition filter:', filtered.length);
     }
 
     if (minPrice) {
@@ -82,8 +88,9 @@ export const MarketplacePage: React.FC = () => {
       }
     });
 
+    console.log('Final filtered count:', filtered.length);
     return filtered;
-  }, [listings, user, searchTerm, listingTypeFilter, categoryFilter, conditionFilter, minPrice, maxPrice, sortBy]);
+  }, [listings, user, searchTerm, listingTypeFilter, categoryFilter, conditionFilter, minPrice, maxPrice, sortBy, viewMode]);
 
   const handleContactSeller = async (listing: MarketplaceListing) => {
     const conversationId = await getOrCreateConversation(listing.user_id, listing.id);
