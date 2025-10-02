@@ -290,6 +290,59 @@ export const useMessaging = () => {
     }
   }, [realtimeChannel]);
 
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!user) return { error: 'User not authenticated' };
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        return { error: error.message };
+      }
+
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+
+      return { error: null };
+    } catch (error) {
+      console.error('Error in deleteMessage:', error);
+      return { error: 'Failed to delete message' };
+    }
+  }, [user]);
+
+  const deleteConversation = useCallback(async (conversationId: string) => {
+    if (!user) return { error: 'User not authenticated' };
+
+    try {
+      const { error } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('id', conversationId)
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+
+      if (error) {
+        console.error('Error deleting conversation:', error);
+        return { error: error.message };
+      }
+
+      setConversations((prev) => prev.filter((conv) => conv.id !== conversationId));
+
+      if (activeConversation?.id === conversationId) {
+        setActiveConversation(null);
+        setMessages([]);
+      }
+
+      return { error: null };
+    } catch (error) {
+      console.error('Error in deleteConversation:', error);
+      return { error: 'Failed to delete conversation' };
+    }
+  }, [user, activeConversation]);
+
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]);
@@ -315,5 +368,7 @@ export const useMessaging = () => {
     sendMessage,
     subscribeToConversation,
     unsubscribeFromConversation,
+    deleteMessage,
+    deleteConversation,
   };
 };

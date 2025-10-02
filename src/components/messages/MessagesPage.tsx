@@ -15,6 +15,7 @@ export const MessagesPage: React.FC = () => {
     sendMessage,
     subscribeToConversation,
     unsubscribeFromConversation,
+    deleteMessage,
   } = useMessaging();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,6 +70,18 @@ export const MessagesPage: React.FC = () => {
       alert('Failed to send message');
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      const result = await deleteMessage(messageId);
+      if (result.error) {
+        alert(`Failed to delete message: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Failed to delete message');
     }
   };
 
@@ -140,6 +153,7 @@ export const MessagesPage: React.FC = () => {
                 conversation={activeConversation}
                 messages={messages}
                 onSendMessage={handleSendMessage}
+                onDeleteMessage={handleDeleteMessage}
                 sending={sending}
               />
             ) : (

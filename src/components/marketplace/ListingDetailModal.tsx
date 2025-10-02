@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, MessageCircle, Tag, DollarSign, Package, User, Calendar } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, MessageCircle, Tag, DollarSign, Package, User, Calendar, Trash2 } from 'lucide-react';
 import { MarketplaceListing } from '../../hooks/useMarketplace';
 import { useAuth } from '../../contexts/AuthContext';
 import { OptimizedImage } from '../inventory/OptimizedImage';
@@ -9,15 +9,18 @@ interface ListingDetailModalProps {
   listing: MarketplaceListing;
   onClose: () => void;
   onContact: (listing: MarketplaceListing) => void;
+  onDelete?: (listingId: string) => Promise<void>;
 }
 
 export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   listing,
   onClose,
   onContact,
+  onDelete,
 }) => {
   const { user } = useAuth();
   const isOwnListing = listing.user_id === user?.id;
+  const [deleting, setDeleting] = useState(false);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -155,10 +158,21 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                   <span>Contact Seller</span>
                 </button>
               )}
-              {isOwnListing && (
-                <div className="w-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 py-3 rounded-full font-medium text-center">
-                  This is your listing
-                </div>
+              {isOwnListing && onDelete && (
+                <button
+                  onClick={async () => {
+                    if (confirm('Delete this listing? This action cannot be undone.')) {
+                      setDeleting(true);
+                      await onDelete(listing.id);
+                      onClose();
+                    }
+                  }}
+                  disabled={deleting}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-full font-medium transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span>{deleting ? 'Deleting...' : 'Delete Listing'}</span>
+                </button>
               )}
             </div>
           </div>

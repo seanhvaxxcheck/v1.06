@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User } from 'lucide-react';
+import { Send, User, Trash2 } from 'lucide-react';
 import { Conversation, Message } from '../../hooks/useMessaging';
 import { useAuth } from '../../contexts/AuthContext';
 import { format } from 'date-fns';
@@ -8,6 +8,7 @@ interface MessageThreadProps {
   conversation: Conversation;
   messages: Message[];
   onSendMessage: (text: string) => Promise<void>;
+  onDeleteMessage: (messageId: string) => Promise<void>;
   sending: boolean;
 }
 
@@ -15,10 +16,12 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   conversation,
   messages,
   onSendMessage,
+  onDeleteMessage,
   sending,
 }) => {
   const { user } = useAuth();
   const [messageText, setMessageText] = useState('');
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -43,6 +46,13 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       e.preventDefault();
       handleSubmit(e);
     }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!confirm('Delete this message?')) return;
+    setDeletingMessageId(messageId);
+    await onDeleteMessage(messageId);
+    setDeletingMessageId(null);
   };
 
   return (
@@ -79,27 +89,41 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
             return (
               <div
                 key={message.id}
-                className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
               >
                 <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
-                  <div
-                    className={`rounded-2xl px-4 py-2 ${
-                      isOwn
-                        ? 'bg-green-500 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap break-words">
-                      {message.message_text}
-                    </p>
+                  <div className="flex items-start gap-2">
+                    {isOwn && (
+                      <button
+                        onClick={() => handleDeleteMessage(message.id)}
+                        disabled={deletingMessageId === message.id}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded disabled:opacity-50"
+                        title="Delete message"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      </button>
+                    )}
+                    <div>
+                      <div
+                        className={`rounded-2xl px-4 py-2 ${
+                          isOwn
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words">
+                          {message.message_text}
+                        </p>
+                      </div>
+                      <p
+                        className={`text-xs text-gray-500 dark:text-gray-400 mt-1 ${
+                          isOwn ? 'text-right' : 'text-left'
+                        }`}
+                      >
+                        {format(new Date(message.created_at), 'h:mm a')}
+                      </p>
+                    </div>
                   </div>
-                  <p
-                    className={`text-xs text-gray-500 dark:text-gray-400 mt-1 ${
-                      isOwn ? 'text-right' : 'text-left'
-                    }`}
-                  >
-                    {format(new Date(message.created_at), 'h:mm a')}
-                  </p>
                 </div>
               </div>
             );

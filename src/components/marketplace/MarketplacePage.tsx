@@ -9,7 +9,7 @@ import { OptimizedImage } from '../inventory/OptimizedImage';
 
 export const MarketplacePage: React.FC = () => {
   const { user } = useAuth();
-  const { listings, loading } = useMarketplace();
+  const { listings, loading, deleteListing } = useMarketplace();
   const { getOrCreateConversation } = useMessaging();
 
   const [viewMode, setViewMode] = useState<'all' | 'mine'>('all');
@@ -117,6 +117,18 @@ export const MarketplacePage: React.FC = () => {
     } catch (error) {
       console.error('Error contacting seller:', error);
       alert('Failed to contact seller. Please try again.');
+    }
+  };
+
+  const handleDeleteListing = async (listingId: string) => {
+    try {
+      const result = await deleteListing(listingId);
+      if (result.error) {
+        alert(`Failed to delete listing: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      alert('Failed to delete listing');
     }
   };
 
@@ -346,6 +358,7 @@ export const MarketplacePage: React.FC = () => {
           listing={selectedListing}
           onClose={() => setSelectedListing(null)}
           onContact={handleContactSeller}
+          onDelete={handleDeleteListing}
         />
       )}
 
