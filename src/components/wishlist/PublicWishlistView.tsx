@@ -119,7 +119,7 @@ export const PublicWishlistView: React.FC = () => {
                 className="h-8 w-8 mr-3"
               />
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Help {wishlistItem.owner_name} Find This Item
+                Look at {wishlistItem.owner_name} Wishlist!
               </h1>
             </div>
             <p className="text-lg text-gray-600 dark:text-gray-400">
@@ -214,66 +214,6 @@ export const PublicWishlistView: React.FC = () => {
                   <p className="text-gray-600 dark:text-gray-400">{wishlistItem.description}</p>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* How to Help */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            How You Can Help
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                  <span className="text-blue-600 dark:text-blue-400 text-sm font-bold">1</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Search Online</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Use the search terms above to look on eBay, Facebook Marketplace, estate sales, or antique shops
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                  <span className="text-green-600 dark:text-green-400 text-sm font-bold">2</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Check Local Sources</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Visit antique malls, estate sales, thrift stores, and collector shows in your area
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                  <span className="text-purple-600 dark:text-purple-400 text-sm font-bold">3</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Share with Networks</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Share this wishlist item with other collectors, Facebook groups, or collector forums
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                  <span className="text-orange-600 dark:text-orange-400 text-sm font-bold">4</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Contact the Collector</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Found something? Contact {wishlistItem.owner_name} through MyGlassCase to let them know!
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
