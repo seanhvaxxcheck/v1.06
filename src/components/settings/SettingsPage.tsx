@@ -70,17 +70,17 @@ React.useEffect(() => {
   const loadCustomFields = async () => {
     if (user) {
       try {
-        const [categories, conditions, deletedCats, deletedConds] = await Promise.all([
+        const [categories, conditions, subcategories, deletedCats, deletedConds] = await Promise.all([
           getCustomCategories(user.id),
           getCustomConditions(user.id),
           getCustomSubcategories(user.id),
           getDeletedDefaultCategories(user.id),
           getDeletedDefaultConditions(user.id)
         ]);
-        
+
         setCustomCategories(categories);
         setCustomConditions(conditions);
-        setCustomSubcategories(deletedCats); // This should be subcategories
+        setCustomSubcategories(subcategories);
         setDeletedDefaultCategories(deletedCats);
         setDeletedDefaultConditions(deletedConds);
       } catch (error) {
@@ -88,12 +88,13 @@ React.useEffect(() => {
         // Set empty arrays as fallbacks
         setCustomCategories([]);
         setCustomConditions([]);
+        setCustomSubcategories([]);
         setDeletedDefaultCategories([]);
         setDeletedDefaultConditions([]);
       }
     }
   };
-  
+
   loadCustomFields();
 }, [user]);
 
@@ -191,6 +192,37 @@ React.useEffect(() => {
     const updated = [...deletedDefaultConditions, conditionName];
     setDeletedDefaultConditions(updated);
     saveDeletedDefaultConditions(updated, user?.id);
+  };
+
+  const handleAddSubcategory = () => {
+    if (newSubcategory.trim()) {
+      const updatedSubcategories = [...customSubcategories, newSubcategory.trim()];
+      setCustomSubcategories(updatedSubcategories);
+      saveCustomSubcategories(updatedSubcategories, user?.id);
+      setNewSubcategory('');
+    }
+  };
+
+  const handleEditSubcategory = (index: number, value: string) => {
+    setEditingSubcategoryIndex(index);
+    setEditingSubcategoryValue(value);
+  };
+
+  const handleSaveSubcategory = (index: number) => {
+    if (editingSubcategoryValue.trim()) {
+      const updated = [...customSubcategories];
+      updated[index] = editingSubcategoryValue.trim();
+      setCustomSubcategories(updated);
+      saveCustomSubcategories(updated, user?.id);
+    }
+    setEditingSubcategoryIndex(null);
+    setEditingSubcategoryValue('');
+  };
+
+  const handleDeleteSubcategory = (index: number) => {
+    const updated = customSubcategories.filter((_, i) => i !== index);
+    setCustomSubcategories(updated);
+    saveCustomSubcategories(updated, user?.id);
   };
 
   const exportAllData = () => {
@@ -665,7 +697,71 @@ React.useEffect(() => {
                       </div>
                     </div>
                   </div>
-                  
+
+                  {/* Subcategories Section */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                      Item Subcategories
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Add subcategories to further organize your items. You can add your own or remove ones you don't use.
+                    </p>
+
+                    <div className="space-y-3">
+                      {/* Custom Subcategories */}
+                      {customSubcategories.map((subcategory, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+                          {editingSubcategoryIndex === index ? (
+                            <input
+                              type="text"
+                              value={editingSubcategoryValue}
+                              onChange={(e) => setEditingSubcategoryValue(e.target.value)}
+                              onBlur={() => handleSaveSubcategory(index)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSaveSubcategory(index)}
+                              className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="text-gray-900 dark:text-white">{subcategory}</span>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEditSubcategory(index, subcategory)}
+                              className="p-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSubcategory(index)}
+                              className="p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Add New Subcategory */}
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newSubcategory}
+                          onChange={(e) => setNewSubcategory(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleAddSubcategory()}
+                          placeholder="Add a new subcategory (like 'Plates' or 'Bowls')"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                        />
+                        <button
+                          onClick={handleAddSubcategory}
+                          disabled={!newSubcategory.trim()}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white rounded-lg transition-colors"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Conditions Section */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
