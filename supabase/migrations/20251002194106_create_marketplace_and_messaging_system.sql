@@ -2,7 +2,7 @@
   # The Exchange and Real-Time Messaging System
 
   ## Overview
-  Creates an internal community marketplace where authenticated users can list items for sale or trade,
+  Creates an internal The Exchange where authenticated users can list items for sale or trade,
   and communicate with each other through real-time messaging.
 
   ## New Tables
