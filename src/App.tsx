@@ -18,6 +18,8 @@ import { PublicCollectionView } from './components/shared/PublicCollectionView';
 import { PublicWishlistView } from './components/wishlist/PublicWishlistView';
 import { PublicWishlistAllView } from './components/wishlist/PublicWishlistAllView';
 import { ImageRecognitionPage } from './components/recognition/ImageRecognitionPage';
+import { MarketplacePage } from './components/marketplace/MarketplacePage';
+import { MessagesPage } from './components/messages/MessagesPage';
 
 const AppContent: React.FC = () => {
   const { user, profile, loading } = useAuth();
@@ -125,6 +127,8 @@ const AppContent: React.FC = () => {
     switch (currentPage) {
       case 'dashboard': return <DashboardHome onPageChange={handlePageChange} subscription={subscription} />;
       case 'inventory': return <InventoryManager itemIdToOpen={itemIdToOpen} onItemOpened={handleInventoryItemOpened} />;
+      case 'marketplace': return <MarketplacePage />;
+      case 'messages': return <MessagesPage />;
       case 'recognition': return <ImageRecognitionPage />;
       case 'wishlist': return <WishlistPage />;
       case 'import-export': return <ImportExportPage />;

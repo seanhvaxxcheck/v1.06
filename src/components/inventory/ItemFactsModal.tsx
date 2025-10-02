@@ -1,8 +1,9 @@
 import React from 'react';
-import { X, Calendar, MapPin, Info, DollarSign, Award, Clock, Heart, TrendingUp, CreditCard as Edit, Trash2, RotateCcw, Loader as Loader2, ExternalLink } from 'lucide-react';
+import { X, Calendar, MapPin, Info, DollarSign, Award, Clock, Heart, TrendingUp, CreditCard as Edit, Trash2, RotateCcw, Loader as Loader2, ExternalLink, ShoppingBag } from 'lucide-react';
 import { format } from 'date-fns';
 import { OptimizedImage } from './OptimizedImage';
 import { EbayListingModal } from '../ebay/EbayListingModal';
+import { ListItemModal } from '../marketplace/ListItemModal';
 import type { InventoryItem } from '../../hooks/useInventory';
 
 interface ItemFactsModalProps {
@@ -21,8 +22,8 @@ interface ItemFactsModalProps {
   onRefresh?: () => void;
 }
 
-export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({ 
-  item, 
+export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
+  item,
   onClose,
   onItemUpdated,
   viewMode = 'active',
@@ -39,6 +40,7 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [localFavoriteStatus, setLocalFavoriteStatus] = React.useState(item.favorites || 0);
   const [ebayModalOpen, setEbayModalOpen] = React.useState(false);
+  const [marketplaceModalOpen, setMarketplaceModalOpen] = React.useState(false);
 
   const handleLocalToggleFavorite = async () => {
     if (!handleToggleFavorite || isProcessing) return;
@@ -290,6 +292,16 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
                 </button>
               )}
 
+              {/* Marketplace Listing Button */}
+              <button
+                onClick={() => setMarketplaceModalOpen(true)}
+                disabled={isProcessing}
+                className="flex flex-col items-center p-4 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-xl transition-colors disabled:opacity-50"
+              >
+                <ShoppingBag className="h-5 w-5 mb-2" />
+                <span className="text-sm font-medium">List on Marketplace</span>
+              </button>
+
               {/* eBay Listing Button */}
               <button
                 onClick={() => setEbayModalOpen(true)}
@@ -517,6 +529,14 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
         </div>
       </div>
 
+      {/* Marketplace Listing Modal */}
+      {marketplaceModalOpen && (
+        <ListItemModal
+          onClose={() => setMarketplaceModalOpen(false)}
+          inventoryItemId={parseInt(item.id)}
+        />
+      )}
+
       {/* eBay Listing Modal */}
       <EbayListingModal
         item={item}
@@ -524,7 +544,6 @@ export const ItemFactsModal: React.FC<ItemFactsModalProps> = ({
         onClose={() => setEbayModalOpen(false)}
         onListingCreated={(listingUrl) => {
           setEbayModalOpen(false);
-          // You could show a success toast here
           console.log('eBay listing created:', listingUrl);
         }}
       />

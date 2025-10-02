@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { amphora, Package, Settings, LogOut, Menu, X, Moon, Sun, Crown, ChartBar as BarChart3, Heart, Home as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles } from 'lucide-react';
+import { amphora, Package, Settings, LogOut, Menu, X, Moon, Sun, Crown, ChartBar as BarChart3, Heart, Home as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useStripe } from '../../hooks/useStripe';
+import { useMessaging } from '../../hooks/useMessaging';
 import { getProductByPriceId } from '../../stripe-config';
 import { HelpModal } from '../help/HelpModal';
 
@@ -12,14 +13,15 @@ interface DashboardLayoutProps {
   onPageChange: (page: string) => void;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
-  children, 
-  currentPage, 
-  onPageChange 
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+  children,
+  currentPage,
+  onPageChange
 }) => {
   const { user, profile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { getSubscription } = useStripe();
+  const { unreadCount } = useMessaging();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [subscription, setSubscription] = useState<any>(null);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
@@ -29,6 +31,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const navigation = [
     { name: 'Home', id: 'dashboard', icon: Home },
     { name: 'Collection', id: 'inventory', icon: Package },
+    { name: 'Marketplace', id: 'marketplace', icon: ShoppingBag },
+    { name: 'Messages', id: 'messages', icon: MessageCircle, badge: unreadCount },
     { name: 'AI Recognition', id: 'recognition', icon: Sparkles, hidden: true },
     { name: 'Wishlist', id: 'wishlist', icon: Heart },
     { name: 'Settings', id: 'settings', icon: Settings },
@@ -72,7 +76,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   <button
                     key={item.id}
                     onClick={() => onPageChange(item.id)}
-                    className={`flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    className={`relative flex items-center px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       currentPage === item.id
                         ? 'bg-black text-white dark:bg-white dark:text-black'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -80,6 +84,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   >
                     <item.icon className="h-4 w-4 mr-2" />
                     {item.name}
+                    {item.badge && item.badge > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500 text-white">
+                        {item.badge}
+                      </span>
+                    )}
                   </button>
                 ))}
               </nav>
