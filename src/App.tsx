@@ -16,6 +16,7 @@ import { SettingsPage } from './components/settings/SettingsPage';
 import SupabaseDebugInfo from './components/SupabaseDebugInfo';
 import { PublicCollectionView } from './components/shared/PublicCollectionView';
 import { PublicWishlistView } from './components/wishlist/PublicWishlistView';
+import { PublicWishlistAllView } from './components/wishlist/PublicWishlistAllView';
 import { ImageRecognitionPage } from './components/recognition/ImageRecognitionPage';
 
 const AppContent: React.FC = () => {
