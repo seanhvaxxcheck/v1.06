@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, CreditCard as Edit, Trash2, Heart, DollarSign, Calendar, Play, Pause, CircleAlert as AlertCircle, X, Image as ImageIcon, Package } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, Heart, DollarSign, Calendar, Play, Pause, CircleAlert as AlertCircle, X, Image as ImageIcon, Package, Share } from 'lucide-react';
 import { useWishlist, type WishlistItem } from '../../hooks/useWishlist';
 import { WishlistModal } from './WishlistModal';
 import { OptimizedImage } from '../inventory/OptimizedImage';
@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useStripe } from '../../hooks/useStripe';
 import { getProductByPriceId } from '../../stripe-config';
 import { UpgradeModal } from '../subscription/UpgradeModal';
+import { ShareWishlistModal } from './ShareWishlistModal';
 
 interface WishlistPageProps {
   onPageChange?: (page: string) => void;
@@ -26,6 +27,7 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
   const [subscription, setSubscription] = useState<any>(null);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState('');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Check subscription status
   React.useEffect(() => {
@@ -164,6 +166,15 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
               <span>Add to wishlist</span>
             </button>
           </div>
+
+          {/* Share Wishlist Button */}
+          <button
+            onClick={() => setShareModalOpen(true)}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            title="Share Wishlist"
+          >
+            <Share className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Wishlist Items - Pinterest Style */}
@@ -361,6 +372,11 @@ export const WishlistPage: React.FC<WishlistPageProps> = ({ onPageChange }) => {
         isOpen={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}
         feature={upgradeFeature}
+      />
+
+      <ShareWishlistModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
       />
     </div>
   );
