@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MessageCircle, Tag, DollarSign, Package, User, Calendar, Trash2 } from 'lucide-react';
+import { X, MessageCircle, Tag, DollarSign, Package, User, Calendar, Trash2, TriangleAlert as AlertTriangle } from 'lucide-react';
 import { MarketplaceListing } from '../../hooks/useMarketplace';
 import { useAuth } from '../../contexts/AuthContext';
 import { OptimizedImage } from '../inventory/OptimizedImage';
@@ -12,6 +12,59 @@ interface ListingDetailModalProps {
   onDelete?: (listingId: string) => Promise<void>;
 }
 
+const DeleteConfirmationModal: React.FC<{
+  onConfirm: () => void;
+  onCancel: () => void;
+  deleting: boolean;
+}> = ({ onConfirm, onCancel, deleting }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <div className="flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+            <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+          </div>
+        </div>
+
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-3">
+          Delete this listing?
+        </h3>
+
+        <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+          This action cannot be undone. Your listing will be permanently removed from the marketplace.
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            disabled={deleting}
+            className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+          >
+            {deleting ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                <span>Deleting...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-5 w-5" />
+                <span>Delete</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   listing,
   onClose,
@@ -21,8 +74,18 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const { user } = useAuth();
   const isOwnListing = listing.user_id === user?.id;
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setDeleting(true);
+    await onDelete(listing.id);
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Listing Details</h2>
@@ -160,24 +223,26 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
               )}
               {isOwnListing && onDelete && (
                 <button
-                  onClick={async () => {
-                    if (confirm('Delete this listing? This action cannot be undone.')) {
-                      setDeleting(true);
-                      await onDelete(listing.id);
-                      onClose();
-                    }
-                  }}
-                  disabled={deleting}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-full font-medium transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-full font-medium transition-colors flex items-center justify-center space-x-2"
                 >
                   <Trash2 className="h-5 w-5" />
-                  <span>{deleting ? 'Deleting...' : 'Delete Listing'}</span>
+                  <span>Delete Listing</span>
                 </button>
               )}
             </div>
           </div>
         </div>
       </div>
-    </div>
+      </div>
+
+      {showDeleteConfirm && (
+        <DeleteConfirmationModal
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+          deleting={deleting}
+        />
+      )}
+    </>
   );
 };
