@@ -265,9 +265,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   currentPage === item.id ? 'text-green-600 dark:text-green-400' : ''
                 }`} />
                 {item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 min-w-[16px] h-4 rounded-full text-[10px] font-bold bg-green-500 text-white">
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-gray-800"></span>
                 )}
               </div>
               <span className={`text-[10px] font-medium leading-tight max-w-full overflow-hidden text-ellipsis whitespace-nowrap ${
