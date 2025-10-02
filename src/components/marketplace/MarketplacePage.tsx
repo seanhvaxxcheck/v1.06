@@ -146,7 +146,7 @@ export const MarketplacePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Community Marketplace</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">The Exchange</h1>
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 {filteredListings.length} items
               </span>
@@ -338,7 +338,7 @@ export const MarketplacePage: React.FC = () => {
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               {listings.length === 0
-                ? 'Be the first to list an item in the community marketplace'
+                ? 'Be the first to list an item in The Exchange'
                 : 'Try adjusting your search criteria'}
             </p>
             {listings.length === 0 && (
