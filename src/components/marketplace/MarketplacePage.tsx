@@ -110,7 +110,7 @@ export const MarketplacePage: React.FC = () => {
       console.log('Conversation ID:', conversationId);
 
       if (conversationId) {
-        window.location.hash = '#/messages';
+        window.location.hash = `#/messages?conversation=${conversationId}`;
       } else {
         alert('Failed to create conversation. Please try again.');
       }

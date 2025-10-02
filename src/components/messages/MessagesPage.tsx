@@ -19,6 +19,7 @@ export const MessagesPage: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sending, setSending] = useState(false);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   const filteredConversations = conversations.filter((conv) => {
     if (!searchTerm) return true;
@@ -26,6 +27,22 @@ export const MessagesPage: React.FC = () => {
     const otherUserName = conv.other_user?.full_name || conv.other_user?.email || '';
     return otherUserName.toLowerCase().includes(search);
   });
+
+  useEffect(() => {
+    if (!hasAutoSelected && conversations.length > 0) {
+      const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
+      const conversationId = urlParams.get('conversation');
+
+      if (conversationId) {
+        const conversation = conversations.find(c => c.id === conversationId);
+        if (conversation) {
+          setActiveConversation(conversation);
+          setHasAutoSelected(true);
+          window.history.replaceState(null, '', '#/messages');
+        }
+      }
+    }
+  }, [conversations, hasAutoSelected, setActiveConversation]);
 
   useEffect(() => {
     if (activeConversation) {
