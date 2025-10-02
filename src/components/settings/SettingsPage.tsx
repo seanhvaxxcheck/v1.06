@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, CreditCard, Bell, Shield, Download, Trash2, Upload, FileText, Smartphone, Plus, Edit, LogOut, Monitor, HelpCircle, Mail, Info, AlertCircle, CheckCircle, X, Share } from 'lucide-react';
+import { User, CreditCard, Bell, Shield, Download, Trash2, Upload, FileText, Smartphone, Plus, CreditCard as Edit, LogOut, Monitor, Circle as HelpCircle, Mail, Info, CircleAlert as AlertCircle, CircleCheck as CheckCircle, X, Share } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInventory } from '../../hooks/useInventory';
 import { useStripe } from '../../hooks/useStripe';
@@ -25,7 +25,6 @@ import {
   getAllConditions
 } from '../../utils/customFields';
 import { UpgradeModal } from '../subscription/UpgradeModal';
-import { ShareCollectionManager } from './ShareCollectionManager';
 import { EbayIntegrationSettings } from './EbayIntegrationSettings';
 
 interface SettingsPageProps {
@@ -118,7 +117,6 @@ React.useEffect(() => {
     //{ id: 'notifications', name: 'Notifications', icon: Bell },
     //{ id: 'privacy', name: 'Privacy & Security', icon: Shield },
     { id: 'import-export', name: 'Backup & Restore', icon: Upload },
-    { id: 'pwa', name: 'Install App', icon: Smartphone },
     { id: 'support', name: 'Support', icon: HelpCircle },
   ];
 
@@ -1199,7 +1197,6 @@ React.useEffect(() => {
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         </div>
