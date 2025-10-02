@@ -16,7 +16,9 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
   const { items } = useInventory();
 
   const [useExistingItem, setUseExistingItem] = useState(!!inventoryItemId);
-  const [selectedInventoryId, setSelectedInventoryId] = useState<number | null>(inventoryItemId || null);
+  const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(
+    inventoryItemId ? inventoryItemId.toString() : null
+  );
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -30,8 +32,10 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (selectedInventoryId && items) {
-      const item = items.find(i => i.id === selectedInventoryId.toString());
+    console.log('ListItemModal - items:', items?.length, 'selectedInventoryId:', selectedInventoryId);
+    if (selectedInventoryId && items && items.length > 0) {
+      const item = items.find(i => i.id === selectedInventoryId);
+      console.log('Found item:', item);
       if (item) {
         setTitle(item.name);
         setDescription(item.description || '');
@@ -76,10 +80,12 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
       return;
     }
 
+    console.log('Submitting listing with inventory_item_id:', selectedInventoryId, 'type:', typeof selectedInventoryId);
+
     setSaving(true);
     try {
       const result = await createListing({
-        inventory_item_id: useExistingItem ? selectedInventoryId : null,
+        inventory_item_id: useExistingItem && selectedInventoryId ? parseInt(selectedInventoryId) : null,
         title: title.trim(),
         description: description.trim(),
         category: category.trim(),
@@ -91,9 +97,12 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
         trade_preferences: tradePreferences.trim() || null,
       });
 
+      console.log('Create listing result:', result);
+
       if (result.error) {
         alert(`Failed to create listing: ${result.error}`);
       } else {
+        alert('Listing created successfully!');
         onClose();
       }
     } catch (error) {
@@ -146,15 +155,19 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
             {useExistingItem && (
               <select
                 value={selectedInventoryId || ''}
-                onChange={(e) => setSelectedInventoryId(e.target.value ? parseInt(e.target.value) : null)}
+                onChange={(e) => setSelectedInventoryId(e.target.value || null)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select an item</option>
-                {items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
+                {items && items.length > 0 ? (
+                  items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No inventory items found</option>
+                )}
               </select>
             )}
           </div>

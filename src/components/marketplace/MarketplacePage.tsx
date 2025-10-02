@@ -12,6 +12,7 @@ export const MarketplacePage: React.FC = () => {
   const { listings, loading } = useMarketplace();
   const { getOrCreateConversation } = useMessaging();
 
+  const [viewMode, setViewMode] = useState<'all' | 'mine'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [listingTypeFilter, setListingTypeFilter] = useState<'all' | 'sale' | 'trade' | 'both'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -34,7 +35,9 @@ export const MarketplacePage: React.FC = () => {
   }, [listings]);
 
   const filteredListings = useMemo(() => {
-    let filtered = listings.filter(listing => listing.user_id !== user?.id);
+    let filtered = viewMode === 'mine'
+      ? listings.filter(listing => listing.user_id === user?.id)
+      : listings.filter(listing => listing.user_id !== user?.id);
 
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
@@ -121,6 +124,29 @@ export const MarketplacePage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-full p-1 mb-4 w-fit">
+            <button
+              onClick={() => setViewMode('all')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'all'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              All Listings
+            </button>
+            <button
+              onClick={() => setViewMode('mine')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                viewMode === 'mine'
+                  ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              My Listings
+            </button>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />

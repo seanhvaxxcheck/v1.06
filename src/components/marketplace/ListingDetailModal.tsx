@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, MessageCircle, Tag, DollarSign, Package, User, Calendar } from 'lucide-react';
 import { MarketplaceListing } from '../../hooks/useMarketplace';
+import { useAuth } from '../../contexts/AuthContext';
 import { OptimizedImage } from '../inventory/OptimizedImage';
 import { format } from 'date-fns';
 
@@ -15,6 +16,8 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   onClose,
   onContact,
 }) => {
+  const { user } = useAuth();
+  const isOwnListing = listing.user_id === user?.id;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -130,13 +133,20 @@ export const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 </div>
               )}
 
-              <button
-                onClick={() => onContact(listing)}
-                className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-medium transition-colors flex items-center justify-center space-x-2"
-              >
-                <MessageCircle className="h-5 w-5" />
-                <span>Contact Seller</span>
-              </button>
+              {!isOwnListing && (
+                <button
+                  onClick={() => onContact(listing)}
+                  className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-full font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  <span>Contact Seller</span>
+                </button>
+              )}
+              {isOwnListing && (
+                <div className="w-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 py-3 rounded-full font-medium text-center">
+                  This is your listing
+                </div>
+              )}
             </div>
           </div>
         </div>
