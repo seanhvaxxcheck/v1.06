@@ -155,6 +155,7 @@ function App() {
           <Routes>
             <Route path="/share/:shareId" element={<PublicCollectionView />} />
             <Route path="/wishlist/share/:shareId" element={<PublicWishlistView />} />
+            <Route path="/wishlist/share-all/:shareId" element={<PublicWishlistAllView />} />
             <Route path="/*" element={<AppContent />} />
           </Routes>
         </BrowserRouter>
