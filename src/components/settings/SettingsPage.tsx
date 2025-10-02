@@ -57,7 +57,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange }) => {
   const [upgradeFeature, setUpgradeFeature] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState<{ success: number; errors: string[] } | null>(null);
-  const [showColumnGuide, setShowColumnGuide] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Load deleted defaults
@@ -942,62 +941,6 @@ React.useEffect(() => {
                         </div>
                       )}
 
-                      {/* Column Guide Toggle */}
-                      <div className="flex items-center justify-between">
-                        <button
-                          onClick={() => setShowColumnGuide(!showColumnGuide)}
-                          className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors"
-                        >
-                          <Info className="h-4 w-4 mr-1" />
-                          {showColumnGuide ? 'Hide' : 'Show'} Detailed Column Guide - (This Section is not complete yet)
-                        </button>
-                      </div>
-
-                      {/* Detailed Column Guide */} 
-                      {showColumnGuide && (
-                        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-700 dark:text-gray-300">Detailed Import Guide : This section is not complete yet</h4>
-                            <button
-                              onClick={() => setShowColumnGuide(false)}
-                              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                          <div className="space-y-4 text-sm">
-                            <div>
-                              <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Category Values:</h5>
-                              <p className="text-gray-600 dark:text-gray-400 mb-1">
-                                Use any of your custom categories:
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {getAllCategories(user?.id).map((cat) => (
-                                  <code key={cat.id} className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">
-                                    {cat.name}
-                                  </code>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <h5 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Condition Values:</h5>
-                              <div className="flex flex-wrap gap-2">
-                                {getAllConditions(user?.id).map((cond) => (
-                                  <code key={cond.id} className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">
-                                    {cond.name}
-                                  </code>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-                              <p className="text-blue-700 dark:text-blue-300 text-xs">
-                                <strong>Pro Tip:</strong> The system is flexible with column names. "Item Name", "Product Name", "Title" will all map to the name field. 
-                                Similarly, "Brand", "Maker", "Company\" will map to manufacturer.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Column Requirements */}
