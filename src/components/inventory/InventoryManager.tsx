@@ -9,7 +9,7 @@ import {
   Image as ImageIcon,
   X,
   TrendingUp,
-  Package,
+  amphora,
   Star,
   RotateCcw,
   Grid,
