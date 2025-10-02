@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { amphora, Plus, TrendingUp, Image as ImageIcon, ArrowRight, Star, Heart, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Plus, TrendingUp, Image as ImageIcon, ArrowRight, Star, Heart, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useInventory, type InventoryItem } from '../../hooks/useInventory';
 import { ItemModal } from '../inventory/ItemModal';
 import { ItemFactsModal } from '../inventory/ItemFactsModal';
