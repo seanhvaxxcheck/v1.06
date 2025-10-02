@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Plus, Search, ListFilter as Filter, Download, CreditCard as Edit, Trash2, Image as ImageIcon, X, TrendingUp, Package, Star, RotateCcw, Grid2x2 as Grid, List } from 'lucide-react';
+import { Plus, Search, ListFilter as Filter, Download, CreditCard as Edit, Trash2, Image as ImageIcon, X, TrendingUp, Package, Star, RotateCcw, Grid2x2 as Grid, List, Share } from 'lucide-react';
 import { useInventory, type InventoryItem } from '../../hooks/useInventory';
 import { ItemModal } from './ItemModal';
 import { MarketAnalysisModal } from './MarketAnalysisModal';
@@ -7,6 +7,7 @@ import { ItemFactsModal } from './ItemFactsModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { ToastNotification } from './ToastNotification';
 import { OptimizedImage } from './OptimizedImage';
+import { ShareCollectionModal } from './ShareCollectionModal';
 
 import { useMarketAnalysis, type MarketAnalysisData } from '../../hooks/useMarketAnalysis';
 import { useAuth } from '../../contexts/AuthContext';
@@ -63,6 +64,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState('');
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Fetch custom categories and conditions
   useEffect(() => {
@@ -438,6 +440,15 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                 <Download className="h-5 w-5" />
               </button>
 
+              {/* Share Collection */}
+              <button
+                onClick={() => setShareModalOpen(true)}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                title="Share Collection"
+              >
+                <Share className="h-5 w-5" />
+              </button>
+
               {/* Add Item */}
               {viewMode === 'active' && (
                 <button
@@ -742,6 +753,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
         message={toastMessage}
         onClose={() => setToastVisible(false)}
         type="success"
+      />
+
+      <ShareCollectionModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
       />
     </div>
   );
