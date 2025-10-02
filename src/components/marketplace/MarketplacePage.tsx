@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, Tag, DollarSign, ArrowUpDown, Package, MessageCircle, User, Plus } from 'lucide-react';
+import { Search, ListFilter as Filter, Tag, DollarSign, ArrowUpDown, Package, MessageCircle, User, Plus } from 'lucide-react';
 import { useMarketplace, type MarketplaceListing } from '../../hooks/useMarketplace';
 import { useMessaging } from '../../hooks/useMessaging';
 import { useAuth } from '../../contexts/AuthContext';
