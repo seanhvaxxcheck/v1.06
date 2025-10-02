@@ -17,7 +17,7 @@ export interface WishlistItem {
   description?: string;
   photo_url?: string | null;
   quantity: number;
-  status: 'active' | 'paused' | 'found';
+  status: 'active' | 'found';
   created_at: string;
   updated_at: string;
 }
