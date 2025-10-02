@@ -154,54 +154,6 @@ export const PublicWishlistAllView: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Wishlist Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-full">
-                <Heart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {wishlist.stats.totalItems}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Items Wanted</p>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {wishlist.stats.oldestYear && wishlist.stats.newestYear && wishlist.stats.oldestYear !== Infinity
-                  ? `${wishlist.stats.oldestYear}-${wishlist.stats.newestYear}`
-                  : 'Various'
-                }
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Years</p>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
-                <Info className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {wishlist.stats.categories.length}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Categories</p>
-            </div>
-          </div>
-        </div>
-
         {/* Wishlist Items - Pinterest Style */}
         {wishlist.items.length > 0 ? (
           <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
