@@ -8,7 +8,7 @@
   ## New Tables
 
   ### marketplace_listings
-  Stores items users post to the community marketplace
+  Stores items users post to The Exchange
   - `id` (uuid, primary key)
   - `user_id` (uuid, foreign key to profiles) - The user who posted the listing
   - `inventory_item_id` (bigint, nullable, foreign key to inventory) - Optional link to existing inventory item
