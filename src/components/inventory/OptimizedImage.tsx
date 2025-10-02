@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ImageIcon } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
+import { getOptimizedImageUrl, getResponsiveImageSrcSet, generateBlurDataURL } from '../../utils/imageOptimization';
 
 interface OptimizedImageProps {
   src: string | null;
@@ -7,6 +8,8 @@ interface OptimizedImageProps {
   className?: string;
   fallbackIcon?: React.ReactNode;
   priority?: boolean;
+  width?: number;
+  height?: number;
 }
 
 // Global cache to store loaded image URLs
@@ -17,11 +20,18 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   alt,
   className = '',
   fallbackIcon,
-  priority = false
+  priority = false,
+  width,
+  height
 }) => {
+  // Optimize image URL with transformations
+  const optimizedSrc = getOptimizedImageUrl(src, { width, height, quality: 85, format: 'webp' });
+  const blurDataURL = generateBlurDataURL(src);
+  const srcSet = src ? getResponsiveImageSrcSet(src, { quality: 85, format: 'webp' }) : '';
+
   const [isLoaded, setIsLoaded] = useState(() => {
     // Check if image is already cached
-    return src ? imageCache.has(src) : false;
+    return optimizedSrc ? imageCache.has(optimizedSrc) : false;
   });
   const [isError, setIsError] = useState(false);
   const [isInView, setIsInView] = useState(priority);
@@ -42,8 +52,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         }
       },
       {
-        rootMargin: '100px', // Start loading 100px before the image comes into view
-        threshold: 0.1
+        rootMargin: '200px',
+        threshold: 0.01
       }
     );
 
@@ -56,20 +66,21 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   // Preload critical images
   useEffect(() => {
-    if (priority && src && !imageCache.has(src)) {
+    if (priority && optimizedSrc && !imageCache.has(optimizedSrc)) {
       const img = new Image();
-      img.src = src;
+      img.src = optimizedSrc;
+      if (srcSet) img.srcset = srcSet;
       img.onload = () => {
-        imageCache.add(src);
+        imageCache.add(optimizedSrc);
         setIsLoaded(true);
       };
       img.onerror = () => setIsError(true);
     }
-  }, [src, priority]);
+  }, [optimizedSrc, srcSet, priority]);
 
   const handleImageLoad = () => {
-    if (src) {
-      imageCache.add(src);
+    if (optimizedSrc) {
+      imageCache.add(optimizedSrc);
       setIsLoaded(true);
       setIsError(false);
     }
@@ -90,27 +101,42 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   return (
     <div ref={containerRef} className={`relative overflow-hidden ${className}`}>
-      {/* Placeholder while loading - only show if not cached */}
-      {!isLoaded && !imageCache.has(src) && (
-        <div className="absolute inset-0 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-          <div className="optimized-image-placeholder absolute inset-0"></div>
-          <div className="relative z-10 w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full animate-pulse"></div>
+      {/* Blur placeholder while loading */}
+      {!isLoaded && !imageCache.has(optimizedSrc) && blurDataURL && (
+        <div className="absolute inset-0">
+          <img
+            src={blurDataURL}
+            alt=""
+            className="w-full h-full object-cover blur-xl scale-110"
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-gray-100/50 dark:bg-gray-700/50"></div>
         </div>
       )}
-      
+
+      {/* Loading spinner */}
+      {!isLoaded && !imageCache.has(optimizedSrc) && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full animate-pulse"></div>
+        </div>
+      )}
+
       {/* Actual image */}
-      {(isInView || imageCache.has(src)) && (
+      {(isInView || imageCache.has(optimizedSrc)) && optimizedSrc && (
         <img
           ref={imgRef}
-          src={src}
+          src={optimizedSrc}
+          srcSet={srcSet || undefined}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           alt={alt}
           onLoad={handleImageLoad}
           onError={handleImageError}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            isLoaded || imageCache.has(src) ? 'opacity-100' : 'opacity-0'
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
+            isLoaded || imageCache.has(optimizedSrc) ? 'opacity-100' : 'opacity-0'
           }`}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
+          fetchPriority={priority ? 'high' : 'auto'}
         />
       )}
     </div>
