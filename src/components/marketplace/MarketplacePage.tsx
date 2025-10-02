@@ -93,9 +93,30 @@ export const MarketplacePage: React.FC = () => {
   }, [listings, user, searchTerm, listingTypeFilter, categoryFilter, conditionFilter, minPrice, maxPrice, sortBy, viewMode]);
 
   const handleContactSeller = async (listing: MarketplaceListing) => {
-    const conversationId = await getOrCreateConversation(listing.user_id, listing.id);
-    if (conversationId) {
-      window.location.hash = '#/messages';
+    console.log('Contact seller clicked for listing:', listing.id, 'seller:', listing.user_id);
+
+    if (!user) {
+      alert('Please log in to contact sellers');
+      return;
+    }
+
+    if (listing.user_id === user.id) {
+      alert('This is your own listing');
+      return;
+    }
+
+    try {
+      const conversationId = await getOrCreateConversation(listing.user_id, listing.id);
+      console.log('Conversation ID:', conversationId);
+
+      if (conversationId) {
+        window.location.hash = '#/messages';
+      } else {
+        alert('Failed to create conversation. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error contacting seller:', error);
+      alert('Failed to contact seller. Please try again.');
     }
   };
 
