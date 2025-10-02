@@ -206,12 +206,21 @@ export const useMessaging = () => {
         return { error: error.message };
       }
 
+      setMessages((prev) => [...prev, data]);
+
+      await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
+      fetchConversations();
+
       return { data, error: null };
     } catch (error) {
       console.error('Error in sendMessage:', error);
       return { error: 'Failed to send message' };
     }
-  }, [user]);
+  }, [user, fetchConversations]);
 
   const subscribeToConversation = useCallback((conversationId: string) => {
     if (!user || !conversationId) return;
@@ -232,7 +241,12 @@ export const useMessaging = () => {
         },
         (payload) => {
           const newMessage = payload.new as Message;
-          setMessages((prev) => [...prev, newMessage]);
+
+          setMessages((prev) => {
+            const exists = prev.some(msg => msg.id === newMessage.id);
+            if (exists) return prev;
+            return [...prev, newMessage];
+          });
 
           if (newMessage.sender_id !== user.id) {
             supabase
