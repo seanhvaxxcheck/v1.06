@@ -213,14 +213,24 @@ export const useMessaging = () => {
         .update({ last_message_at: new Date().toISOString() })
         .eq('id', conversationId);
 
-      fetchConversations();
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, last_message_at: new Date().toISOString(), last_message: {
+                message_text: messageText,
+                sender_id: user.id,
+                created_at: new Date().toISOString()
+              }}
+            : conv
+        ).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+      );
 
       return { data, error: null };
     } catch (error) {
       console.error('Error in sendMessage:', error);
       return { error: 'Failed to send message' };
     }
-  }, [user, fetchConversations]);
+  }, [user]);
 
   const subscribeToConversation = useCallback((conversationId: string) => {
     if (!user || !conversationId) return;
@@ -253,15 +263,25 @@ export const useMessaging = () => {
               .from('messages')
               .update({ is_read: true, read_at: new Date().toISOString() })
               .eq('id', newMessage.id);
-          }
 
-          fetchConversations();
+            setConversations((prev) =>
+              prev.map((conv) =>
+                conv.id === conversationId
+                  ? { ...conv, last_message_at: newMessage.created_at, last_message: {
+                      message_text: newMessage.message_text,
+                      sender_id: newMessage.sender_id,
+                      created_at: newMessage.created_at
+                    }}
+                  : conv
+              ).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+            );
+          }
         }
       )
       .subscribe();
 
     setRealtimeChannel(channel);
-  }, [user, realtimeChannel, fetchConversations]);
+  }, [user, realtimeChannel]);
 
   const unsubscribeFromConversation = useCallback(() => {
     if (realtimeChannel) {

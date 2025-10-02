@@ -30,6 +30,21 @@ const AppContent: React.FC = () => {
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [itemIdToOpen, setItemIdToOpen] = useState<string | null>(null);
 
+  // Listen to hash changes for navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#/', '').split('?')[0];
+      if (hash) {
+        setCurrentPage(hash);
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   // Check for success page from URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
