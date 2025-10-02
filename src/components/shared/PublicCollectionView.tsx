@@ -163,7 +163,7 @@ export const PublicCollectionView: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Collection Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-center mb-4">
               <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
@@ -175,20 +175,6 @@ export const PublicCollectionView: React.FC = () => {
                 {collection.stats.totalItems}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Items</p>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                <Award className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${collection.stats.totalValue.toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Value</p>
             </div>
           </div>
 

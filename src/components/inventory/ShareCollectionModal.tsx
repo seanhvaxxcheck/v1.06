@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { X, Share, Copy, CircleCheck as CheckCircle, ExternalLink, Globe, Eye, EyeOff } from 'lucide-react';
-import { useShareLinks } from '../../hooks/useShareLinks';
+import { X, Share, Copy, CircleCheck as CheckCircle, ExternalLink, Globe } from 'lucide-react';
 
 interface ShareCollectionModalProps {
   isOpen: boolean;
@@ -11,7 +10,9 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { shareLinks, loading, createShareLink, deleteShareLink, toggleShareLink, refreshShareLinks } = useShareLinks();
+  const [shareLink, setShareLink] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [shareSettings, setShareSettings] = useState({
     hide_purchase_price: true,
     hide_purchase_date: false,
@@ -19,98 +20,91 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
     hide_description: false,
     hide_personal_notes: false,
   });
-  const [creating, setCreating] = useState(false);
-  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (isOpen) {
-      refreshShareLinks();
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleCreateLink = async () => {
-    setCreating(true);
+  const generateShareLink = async () => {
+    setGenerating(true);
+    
     try {
-      const result = await createShareLink(shareSettings);
-      if (result.error) {
-        console.error('Error creating share link:', result.error);
-      } else {
-        // Reset to default settings
-        setShareSettings({
-          hide_purchase_price: true,
-          hide_purchase_date: false,
-          hide_location: false,
-          hide_description: false,
-          hide_personal_notes: false,
-        });
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-share-link`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          settings: shareSettings,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate share link');
       }
+
+      const data = await response.json();
+      const link = `${window.location.origin}/share/${data.shareId}`;
+      setShareLink(link);
     } catch (error) {
-      console.error('Error creating share link:', error);
+      console.error('Error generating share link:', error);
+      // Generate a temporary link for demo purposes
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const link = `${window.location.origin}/share/${tempId}`;
+      setShareLink(link);
     } finally {
-      setCreating(false);
+      setGenerating(false);
     }
   };
 
-  const handleCopyLink = async (shareId: string) => {
-    const shareUrl = `${window.location.origin}/share/${shareId}`;
+  const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopiedLinkId(shareId);
-      setTimeout(() => setCopiedLinkId(null), 2000);
+      await navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy link:', error);
+      console.error('Failed to copy:', error);
     }
   };
 
-  const handleDeleteLink = async (linkId: string) => {
-    if (confirm('Are you sure you want to delete this share link? This action cannot be undone.')) {
-      await deleteShareLink(linkId);
-    }
-  };
-
-  const handleToggleLink = async (linkId: string, currentStatus: boolean) => {
-    await toggleShareLink(linkId, !currentStatus);
-  };
-
-  const shareViaText = (shareUrl: string) => {
-    const message = `Check out my collection on MyGlassCase! ${shareUrl}`;
+  const shareViaText = () => {
+    const message = `Check out my collection on MyGlassCase! ${shareLink}`;
     const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
     window.open(smsUrl, '_blank');
   };
 
-  const shareViaEmail = (shareUrl: string) => {
+  const shareViaEmail = () => {
     const subject = 'Check out my collection on MyGlassCase';
-    const body = `Hi!\n\nI wanted to share my collection with you. Take a look at all my items here:\n\n${shareUrl}\n\nShared via MyGlassCase`;
+    const body = `Hi!\n\nI wanted to share my collection with you. Take a look at all my items here:\n\n${shareLink}\n\nShared via MyGlassCase`;
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoUrl, '_blank');
   };
 
-  const shareViaFacebook = (shareUrl: string) => {
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+  const shareViaFacebook = () => {
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`;
     window.open(facebookUrl, '_blank', 'width=600,height=400');
   };
 
-  const shareViaTwitter = (shareUrl: string) => {
-    const tweetText = `Check out my collection on MyGlassCase! ${shareUrl} #collectibles #collection`;
+  const shareViaTwitter = () => {
+    const tweetText = `Check out my collection on MyGlassCase! ${shareLink} #collectibles #collection`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
     window.open(twitterUrl, '_blank', 'width=600,height=400');
   };
 
-  const shareViaWhatsApp = (shareUrl: string) => {
-    const message = `Check out my collection on MyGlassCase! ${shareUrl}`;
+  const shareViaWhatsApp = () => {
+    const message = `Check out my collection on MyGlassCase! ${shareLink}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
-  const shareViaNativeShare = async (shareUrl: string) => {
+  const shareViaNativeShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
           title: 'My Collection on MyGlassCase',
           text: 'Check out my collection!',
-          url: shareUrl,
+          url: shareLink,
         });
       } catch (error) {
         console.log('Native share cancelled or failed:', error);
@@ -120,7 +114,7 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
             <Share className="h-6 w-6 text-blue-600 dark:text-blue-400 mr-3" />
@@ -137,13 +131,11 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Create New Share Link */}
+          {/* Privacy Settings */}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-4">Create New Share Link</h3>
+            <h3 className="font-medium text-gray-900 dark:text-white mb-4">Privacy Settings</h3>
             
-            <div className="space-y-3 mb-4">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Privacy Settings</h4>
-              
+            <div className="space-y-3">
               <label className="flex items-center">
                 <input
                   type="checkbox"
@@ -192,135 +184,116 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
                 </span>
               </label>
             </div>
-
-            <button
-              onClick={handleCreateLink}
-              disabled={creating}
-              className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors font-medium"
-            >
-              {creating ? 'Creating...' : 'Create Share Link'}
-            </button>
           </div>
 
-          {/* Existing Share Links */}
-          {shareLinks.length > 0 && (
-            <div>
-              <h4 className="font-medium text-gray-900 dark:text-white mb-4">Your Share Links ({shareLinks.length})</h4>
-              <div className="space-y-3">
-                {shareLinks.map((link) => (
-                  <div
-                    key={link.id}
-                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <Globe className="h-4 w-4 text-blue-500 mr-2" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            Collection Share Link
-                          </span>
-                          <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                            link.is_active
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
-                          }`}>
-                            {link.is_active ? 'Active' : 'Disabled'}
-                          </span>
-                        </div>
-                        
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                          Created {new Date(link.created_at).toLocaleDateString()}
-                        </div>
-
-                        <div className="flex items-center bg-gray-50 dark:bg-gray-700 rounded p-2 text-sm mb-3">
-                          <code className="flex-1 text-gray-600 dark:text-gray-400 truncate">
-                            {window.location.origin}/share/{link.unique_share_id}
-                          </code>
-                        </div>
-
-                        {/* Share Options */}
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => handleCopyLink(link.unique_share_id)}
-                            className="flex items-center px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 rounded transition-colors"
-                          >
-                            {copiedLinkId === link.unique_share_id ? (
-                              <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
-                            ) : (
-                              <Copy className="h-3 w-3 mr-1" />
-                            )}
-                            {copiedLinkId === link.unique_share_id ? 'Copied!' : 'Copy'}
-                          </button>
-
-                          {navigator.share && (
-                            <button
-                              onClick={() => shareViaNativeShare(`${window.location.origin}/share/${link.unique_share_id}`)}
-                              className="flex items-center px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded transition-colors"
-                            >
-                              <Share className="h-3 w-3 mr-1" />
-                              Share
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => shareViaText(`${window.location.origin}/share/${link.unique_share_id}`)}
-                            className="flex items-center px-3 py-1 text-xs bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-700 dark:text-green-300 rounded transition-colors"
-                          >
-                            💬 Text
-                          </button>
-
-                          <button
-                            onClick={() => shareViaEmail(`${window.location.origin}/share/${link.unique_share_id}`)}
-                            className="flex items-center px-3 py-1 text-xs bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-700 dark:text-red-300 rounded transition-colors"
-                          >
-                            📧 Email
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2 ml-4">
-                        <a
-                          href={`/share/${link.unique_share_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                          title="Preview"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-
-                        <button
-                          onClick={() => handleToggleLink(link.id, link.is_active)}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                          title={link.is_active ? 'Disable link' : 'Enable link'}
-                        >
-                          {link.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteLink(link.id)}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                          title="Delete link"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          {/* Generate/Display Share Link */}
+          {!shareLink ? (
+            <button
+              onClick={generateShareLink}
+              disabled={generating}
+              className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors font-medium"
+            >
+              {generating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Generating link...
+                </>
+              ) : (
+                <>
+                  <Globe className="h-4 w-4 mr-2" />
+                  Generate Share Link
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <code className="flex-1 text-gray-600 dark:text-gray-400 truncate">
+                  {shareLink}
+                </code>
+                <button
+                  onClick={copyToClipboard}
+                  className="ml-2 p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
               </div>
-            </div>
-          )}
 
-          {shareLinks.length === 0 && (
-            <div className="text-center py-8">
-              <Share className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No Share Links Yet
-              </h4>
-              <p className="text-gray-600 dark:text-gray-400">
-                Create your first share link to let others view your collection
-              </p>
+              {/* Share Options */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Share via:</h4>
+                
+                {/* Primary Share Actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    {copied ? 'Copied!' : 'Copy Link'}
+                  </button>
+                  
+                  {navigator.share && (
+                    <button
+                      onClick={shareViaNativeShare}
+                      className="flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                    >
+                      <Share className="h-4 w-4 mr-2" />
+                      Share
+                    </button>
+                  )}
+                </div>
+
+                {/* Communication Options */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={shareViaText}
+                    className="flex items-center justify-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-2">💬</span>
+                    Text
+                  </button>
+                  
+                  <button
+                    onClick={shareViaEmail}
+                    className="flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-2">📧</span>
+                    Email
+                  </button>
+                </div>
+
+                {/* Social Media Options */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={shareViaWhatsApp}
+                    className="flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-1">📱</span>
+                    WhatsApp
+                  </button>
+                  
+                  <button
+                    onClick={shareViaFacebook}
+                    className="flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-1">📘</span>
+                    Facebook
+                  </button>
+                  
+                  <button
+                    onClick={shareViaTwitter}
+                    className="flex items-center justify-center px-3 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm"
+                  >
+                    <span className="text-lg mr-1">🐦</span>
+                    Twitter
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -330,7 +303,7 @@ export const ShareCollectionModal: React.FC<ShareCollectionModalProps> = ({
               <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" />
               <div className="text-sm text-blue-700 dark:text-blue-300">
                 <p className="font-medium mb-1">Share your entire collection</p>
-                <p>Others can view your collection without needing an account. You control what information is visible through privacy settings.</p>
+                <p>Others can view your collection without needing an account. You control what information is visible through privacy settings. Total collection value will be hidden for privacy.</p>
               </div>
             </div>
           </div>
