@@ -5,6 +5,7 @@ import { useMessaging } from '../../hooks/useMessaging';
 import { useAuth } from '../../contexts/AuthContext';
 import { ListingDetailModal } from './ListingDetailModal';
 import { ListItemModal } from './ListItemModal';
+import { SuccessModal } from './SuccessModal';
 import { OptimizedImage } from '../inventory/OptimizedImage';
 
 export const MarketplacePage: React.FC = () => {
@@ -21,6 +22,7 @@ export const MarketplacePage: React.FC = () => {
   const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
   const [showListModal, setShowListModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const filteredListings = useMemo(() => {
     let filtered = viewMode === 'mine'
@@ -320,7 +322,18 @@ export const MarketplacePage: React.FC = () => {
       )}
 
       {showListModal && (
-        <ListItemModal onClose={() => setShowListModal(false)} />
+        <ListItemModal
+          onClose={() => setShowListModal(false)}
+          onSuccess={() => {
+            setShowListModal(false);
+            setShowSuccessModal(true);
+            setViewMode('mine');
+          }}
+        />
+      )}
+
+      {showSuccessModal && (
+        <SuccessModal onClose={() => setShowSuccessModal(false)} />
       )}
     </div>
   );

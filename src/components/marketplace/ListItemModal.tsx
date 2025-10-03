@@ -7,10 +7,11 @@ import { supabase } from '../../lib/supabase';
 
 interface ListItemModalProps {
   onClose: () => void;
+  onSuccess?: () => void;
   inventoryItemId?: string | null;
 }
 
-export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventoryItemId }) => {
+export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, onSuccess, inventoryItemId }) => {
   const { user } = useAuth();
   const { createListing } = useMarketplace();
   const { items } = useInventory();
@@ -109,8 +110,11 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
       if (result.error) {
         alert(`Failed to create listing: ${result.error}`);
       } else {
-        alert('Listing created successfully!');
-        onClose();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          onClose();
+        }
       }
     } catch (error) {
       console.error('Error creating listing:', error);
