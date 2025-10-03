@@ -241,27 +241,31 @@ export const MarketplacePage: React.FC = () => {
               </button>
             </div>
 
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+            {categories.length > 0 && (
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm"
+              >
+                <option value="all">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            )}
 
-            <select
-              value={conditionFilter}
-              onChange={(e) => setConditionFilter(e.target.value)}
-              className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm"
-            >
-              <option value="all">All Conditions</option>
-              {conditions.map((cond) => (
-                <option key={cond} value={cond}>{cond}</option>
-              ))}
-            </select>
+            {conditions.length > 0 && (
+              <select
+                value={conditionFilter}
+                onChange={(e) => setConditionFilter(e.target.value)}
+                className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm"
+              >
+                <option value="all">All Conditions</option>
+                {conditions.map((cond) => (
+                  <option key={cond} value={cond}>{cond}</option>
+                ))}
+              </select>
+            )}
 
             <select
               value={sortBy}
