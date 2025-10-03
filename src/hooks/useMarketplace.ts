@@ -94,7 +94,10 @@ export const useMarketplace = () => {
           ...listing,
           user_id: user.id,
         })
-        .select()
+        .select(`
+          *,
+          user_profile:profiles!marketplace_listings_user_id_fkey(full_name, email)
+        `)
         .single();
 
       if (error) {
@@ -102,13 +105,14 @@ export const useMarketplace = () => {
         return { error: error.message };
       }
 
-      await fetchListings();
+      setListings(prev => [data, ...prev]);
+
       return { data, error: null };
     } catch (error) {
       console.error('Error in createListing:', error);
       return { error: 'Failed to create listing' };
     }
-  }, [user, fetchListings]);
+  }, [user]);
 
   const updateListing = useCallback(async (id: string, updates: Partial<MarketplaceListing>) => {
     if (!user) return { error: 'User not authenticated' };
