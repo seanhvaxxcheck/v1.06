@@ -10,7 +10,7 @@ import { OptimizedImage } from '../inventory/OptimizedImage';
 
 export const MarketplacePage: React.FC = () => {
   const { user } = useAuth();
-  const { listings, loading, deleteListing } = useMarketplace();
+  const { listings, loading, deleteListing, fetchListings } = useMarketplace();
   const { getOrCreateConversation } = useMessaging();
 
   const [viewMode, setViewMode] = useState<'all' | 'mine'>('all');
@@ -324,10 +324,11 @@ export const MarketplacePage: React.FC = () => {
       {showListModal && (
         <ListItemModal
           onClose={() => setShowListModal(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowListModal(false);
             setShowSuccessModal(true);
             setViewMode('mine');
+            await fetchListings();
           }}
         />
       )}

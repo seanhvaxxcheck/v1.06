@@ -105,14 +105,14 @@ export const useMarketplace = () => {
         return { error: error.message };
       }
 
-      setListings(prev => [data, ...prev]);
+      await fetchListings();
 
       return { data, error: null };
     } catch (error) {
       console.error('Error in createListing:', error);
       return { error: 'Failed to create listing' };
     }
-  }, [user]);
+  }, [user, fetchListings]);
 
   const updateListing = useCallback(async (id: string, updates: Partial<MarketplaceListing>) => {
     if (!user) return { error: 'User not authenticated' };
