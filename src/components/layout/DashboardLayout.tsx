@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Amphora as amphora, Package, Settings, LogOut, Menu, X, Moon, Sun, Crown, ChartBar as BarChart3, Heart, Hop as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles, ShoppingBag, MessageCircle } from 'lucide-react';
+import { Amphora as amphora, Package, Settings, LogOut, Menu, X, Crown, ChartBar as BarChart3, Heart, Hop as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useStripe } from '../../hooks/useStripe';
 import { useMessaging } from '../../hooks/useMessaging';
 import { getProductByPriceId } from '../../stripe-config';
@@ -19,7 +18,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onPageChange
 }) => {
   const { user, profile, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const { getSubscription } = useStripe();
   const { unreadCount } = useMessaging();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -96,18 +94,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
             {/* Right side - Actions and Profile */}
             <div className="flex items-center space-x-3">
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-              >
-                {theme === 'light' ? (
-                  <Moon className="h-5 w-5" />
-                ) : (
-                  <Sun className="h-5 w-5" />
-                )}
-              </button>
-
               {/* Help Button */}
               <button
                 onClick={() => setHelpModalOpen(true)}
