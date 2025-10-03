@@ -15,8 +15,6 @@ export const MarketplacePage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'all' | 'mine'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [listingTypeFilter, setListingTypeFilter] = useState<'all' | 'sale' | 'trade' | 'both'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [conditionFilter, setConditionFilter] = useState<string>('all');
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [sortBy, setSortBy] = useState<'newest' | 'price_low' | 'price_high'>('newest');
@@ -24,23 +22,13 @@ export const MarketplacePage: React.FC = () => {
   const [showListModal, setShowListModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  const categories = useMemo(() => {
-    const cats = new Set(listings.map(l => l.category).filter(Boolean));
-    return Array.from(cats).sort();
-  }, [listings]);
-
-  const conditions = useMemo(() => {
-    const conds = new Set(listings.map(l => l.condition).filter(Boolean));
-    return Array.from(conds).sort();
-  }, [listings]);
-
   const filteredListings = useMemo(() => {
     let filtered = viewMode === 'mine'
       ? listings.filter(listing => listing.user_id === user?.id)
       : listings.filter(listing => listing.user_id !== user?.id);
 
     console.log('Filtering - viewMode:', viewMode, 'initial count:', filtered.length);
-    console.log('Filters - type:', listingTypeFilter, 'category:', categoryFilter, 'condition:', conditionFilter);
+    console.log('Filters - type:', listingTypeFilter);
 
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
@@ -56,16 +44,6 @@ export const MarketplacePage: React.FC = () => {
     if (listingTypeFilter !== 'all') {
       filtered = filtered.filter(l => l.listing_type === listingTypeFilter);
       console.log('After type filter:', filtered.length);
-    }
-
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(l => l.category && l.category === categoryFilter);
-      console.log('After category filter:', filtered.length);
-    }
-
-    if (conditionFilter !== 'all') {
-      filtered = filtered.filter(l => l.condition && l.condition === conditionFilter);
-      console.log('After condition filter:', filtered.length);
     }
 
     if (minPrice) {
@@ -90,7 +68,7 @@ export const MarketplacePage: React.FC = () => {
 
     console.log('Final filtered count:', filtered.length);
     return filtered;
-  }, [listings, user, searchTerm, listingTypeFilter, categoryFilter, conditionFilter, minPrice, maxPrice, sortBy, viewMode]);
+  }, [listings, user, searchTerm, listingTypeFilter, minPrice, maxPrice, sortBy, viewMode]);
 
   const handleContactSeller = async (listing: MarketplaceListing) => {
     console.log('Contact seller clicked for listing:', listing.id, 'seller:', listing.user_id);
@@ -241,31 +219,6 @@ export const MarketplacePage: React.FC = () => {
               </button>
             </div>
 
-            {categories.length > 0 && (
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm"
-              >
-                <option value="all">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            )}
-
-            {conditions.length > 0 && (
-              <select
-                value={conditionFilter}
-                onChange={(e) => setConditionFilter(e.target.value)}
-                className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full text-sm"
-              >
-                <option value="all">All Conditions</option>
-                {conditions.map((cond) => (
-                  <option key={cond} value={cond}>{cond}</option>
-                ))}
-              </select>
-            )}
 
             <select
               value={sortBy}
