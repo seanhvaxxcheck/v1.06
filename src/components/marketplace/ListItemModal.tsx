@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 
 interface ListItemModalProps {
   onClose: () => void;
-  inventoryItemId?: number | null;
+  inventoryItemId?: string | null;
 }
 
 export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventoryItemId }) => {
@@ -17,7 +17,7 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
 
   const [useExistingItem, setUseExistingItem] = useState(!!inventoryItemId);
   const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(
-    inventoryItemId ? inventoryItemId.toString() : null
+    inventoryItemId || null
   );
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -97,10 +97,7 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
       };
 
       if (useExistingItem && selectedInventoryId) {
-        const inventoryId = parseInt(selectedInventoryId);
-        if (!isNaN(inventoryId)) {
-          listingData.inventory_item_id = inventoryId;
-        }
+        listingData.inventory_item_id = selectedInventoryId;
       }
 
       console.log('Final listing data:', listingData);

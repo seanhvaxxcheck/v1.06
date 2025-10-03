@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 export interface MarketplaceListing {
   id: string;
   user_id: string;
-  inventory_item_id: number | null;
+  inventory_item_id: string | null;
   title: string;
   description: string;
   category: string;
