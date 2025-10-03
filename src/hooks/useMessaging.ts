@@ -15,6 +15,11 @@ export interface Conversation {
     full_name: string | null;
     email: string;
   };
+  listing?: {
+    id: string;
+    title: string;
+    photo_url: string | null;
+  };
   last_message?: {
     message_text: string;
     sender_id: string;
@@ -56,7 +61,8 @@ export const useMessaging = () => {
         .select(`
           *,
           user1:profiles!conversations_user1_id_fkey(id, full_name, email),
-          user2:profiles!conversations_user2_id_fkey(id, full_name, email)
+          user2:profiles!conversations_user2_id_fkey(id, full_name, email),
+          listing:marketplace_listings(id, title, photo_url)
         `)
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });

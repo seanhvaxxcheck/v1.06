@@ -56,17 +56,22 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 min-w-0 text-left">
-            <div className="flex items-center justify-between mb-1">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline justify-between mb-1 gap-2">
               <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                 {conversation.other_user?.full_name || conversation.other_user?.email}
               </h3>
-              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                 {conversation.last_message
                   ? formatTime(conversation.last_message.created_at)
                   : formatTime(conversation.created_at)}
               </span>
             </div>
+            {conversation.listing && (
+              <p className="text-xs text-green-600 dark:text-green-400 mb-1 truncate">
+                Re: {conversation.listing.title}
+              </p>
+            )}
             {conversation.last_message && (
               <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                 {conversation.last_message.message_text}

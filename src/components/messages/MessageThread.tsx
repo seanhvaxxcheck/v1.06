@@ -62,13 +62,27 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-semibold">
             {(conversation.other_user?.full_name?.[0] || conversation.other_user?.email?.[0] || 'U').toUpperCase()}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="font-semibold text-gray-900 dark:text-white">
               {conversation.other_user?.full_name || conversation.other_user?.email}
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {conversation.other_user?.email}
             </p>
+            {conversation.listing && (
+              <div className="flex items-center space-x-2 mt-1">
+                {conversation.listing.photo_url && (
+                  <img
+                    src={conversation.listing.photo_url}
+                    alt={conversation.listing.title}
+                    className="w-8 h-8 object-cover rounded"
+                  />
+                )}
+                <p className="text-xs text-green-600 dark:text-green-400 truncate">
+                  About: {conversation.listing.title}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
