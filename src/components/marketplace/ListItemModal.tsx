@@ -80,12 +80,11 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
       return;
     }
 
-    console.log('Submitting listing with inventory_item_id:', selectedInventoryId, 'type:', typeof selectedInventoryId);
+    console.log('Submitting listing with inventory_item_id:', selectedInventoryId, 'useExistingItem:', useExistingItem);
 
     setSaving(true);
     try {
-      const result = await createListing({
-        inventory_item_id: useExistingItem && selectedInventoryId ? parseInt(selectedInventoryId) : null,
+      const listingData: any = {
         title: title.trim(),
         description: description.trim(),
         category: category.trim(),
@@ -95,7 +94,18 @@ export const ListItemModal: React.FC<ListItemModalProps> = ({ onClose, inventory
         listing_type: listingType,
         asking_price: askingPrice ? parseFloat(askingPrice) : null,
         trade_preferences: tradePreferences.trim() || null,
-      });
+      };
+
+      if (useExistingItem && selectedInventoryId) {
+        const inventoryId = parseInt(selectedInventoryId);
+        if (!isNaN(inventoryId)) {
+          listingData.inventory_item_id = inventoryId;
+        }
+      }
+
+      console.log('Final listing data:', listingData);
+
+      const result = await createListing(listingData);
 
       console.log('Create listing result:', result);
 
