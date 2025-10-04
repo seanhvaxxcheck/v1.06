@@ -544,7 +544,7 @@ React.useEffect(() => {
                         </p>
                       </div>
                       <span className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 text-sm font-medium rounded-full">
-                        v1.06
+                        v1.70
                       </span>
                     </div>
                   </div>
@@ -1193,7 +1193,7 @@ React.useEffect(() => {
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Version</span>
                           <span className="inline-flex px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 text-sm rounded-full font-medium">
-                            v1.04
+                            v1.70
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
