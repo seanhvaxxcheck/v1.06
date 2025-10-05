@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Amphora as amphora, Package, Settings, LogOut, Menu, X, Crown, ChartBar as BarChart3, Heart, home as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles, ShoppingBag, MessageCircle } from 'lucide-react';
+import { Amphora as amphora, Package, Settings, LogOut, Menu, X, Crown, ChartBar as BarChart3, Heart, Home as Home, Plus, Search, Bell, Circle as HelpCircle, Sparkles, ShoppingBag, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStripe } from '../../hooks/useStripe';
 import { useMessaging } from '../../hooks/useMessaging';
